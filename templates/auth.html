@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ "登录" if mode == "login" else "注册" }} - 学生管理系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <div class="auth-container">
+      <section class="card auth-card">
+        <h1>学生管理系统（Python）</h1>
+        <h2>{{ "账号登录" if mode == "login" else "账号注册" }}</h2>
+
+        {% if error %}
+        <p class="error-text">{{ error }}</p>
+        {% endif %}
+        {% if toast %}
+        <p class="toast toast-success">{{ toast }}</p>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('login_submit') if mode == 'login' else url_for('register_submit') }}">
+          <div class="form-row">
+            <label for="username">用户名</label>
+            <input id="username" name="username" required />
+          </div>
+
+          <div class="form-row">
+            <label for="password">密码</label>
+            <input id="password" name="password" type="password" required />
+          </div>
+
+          <button type="submit">{{ "登录" if mode == "login" else "注册" }}</button>
+        </form>
+
+        {% if mode == "login" %}
+        <p class="switch-link">还没有账号？<a href="{{ url_for('register_page') }}">去注册</a></p>
+        {% else %}
+        <p class="switch-link">已有账号？<a href="{{ url_for('login_page') }}">去登录</a></p>
+        {% endif %}
+      </section>
+    </div>
+
+    {% if redirect_to %}
+    <script>
+      setTimeout(function () {
+        window.location.href = "{{ redirect_to }}";
+      }, 1200);
+    </script>
+    {% endif %}
+  </body>
+</html>
