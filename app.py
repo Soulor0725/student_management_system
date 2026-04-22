@@ -62,6 +62,8 @@ def register_submit():
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "").strip()
 
+    print(f"[SERVER DEBUG] 收到注册请求: username={username}, password={password}")
+
     if not username or not password:
         return render_template(
             "auth.html",
@@ -76,7 +78,10 @@ def register_submit():
             "SELECT 1 FROM users WHERE username = ?",
             (username,),
         ).fetchone()
+    print(f"[SERVER DEBUG] 用户 {username} 是否存在: {exists}")
+    
     if exists:
+        print(f"[SERVER DEBUG] 用户 {username} 已存在，返回错误")
         return render_template(
             "auth.html",
             mode="register",
@@ -85,20 +90,30 @@ def register_submit():
             redirect_to=None,
         )
 
+    print(f"[SERVER DEBUG] 开始插入用户 {username}")
     with get_db_connection() as conn:
         conn.execute(
             "INSERT INTO users (username, password) VALUES (?, ?)",
             (username, hash_password(password)),
         )
         conn.commit()
-    return redirect(url_for("login_page"))
+    print(f"[SERVER DEBUG] 用户 {username} 插入成功")
+    
+    return render_template(
+        "auth.html",
+        mode="register",
+        error=None,
+        toast="注册成功",
+        redirect_to=None,
+    )
 
 
 @app.get("/login")
 def login_page():
     if is_logged_in():
         return redirect(url_for("index"))
-    return render_template("auth.html", mode="login", error=None, toast=None, redirect_to=None)
+    toast = request.args.get("toast")
+    return render_template("auth.html", mode="login", error=None, toast=toast, redirect_to=None)
 
 
 @app.post("/login")
