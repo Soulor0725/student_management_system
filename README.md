@@ -159,9 +159,29 @@ MySQL 下保留 `conn.commit()`，发生异常时可 `conn.rollback()`。
 
 ---
 
-## 6. 性能测试
+## 6. 自动化测试
 
-### 6.1 JMeter 压测脚本
+### 6.1 Browser Automation 测试
+
+项目包含浏览器自动化测试：`automation_test/`
+
+**功能说明**：
+- 基于 Playwright 的浏览器自动化测试
+- 支持学生管理功能自动化测试
+- 生成测试报告
+
+**使用方式**：
+```bash
+cd automation_test
+pip install -r requirements.txt
+python -m pytest
+# 或使用 cli.py 运行特定测试
+python cli.py
+```
+
+### 6.2 性能测试
+
+#### 6.2.1 JMeter 压测脚本
 
 项目包含 JMeter 压测脚本：`performance_test_jmeter/add_student.jmx`
 
@@ -171,11 +191,11 @@ MySQL 下保留 `conn.commit()`，发生异常时可 `conn.rollback()`。
 - 配套数据清理脚本
 
 **使用方式**：
-1. 使用 JMeter 打开 `performance_test_jmx/add_student.jmx`
+1. 使用 JMeter 打开 `performance_test_jmeter/add_student.jmx`
 2. 配置目标服务器地址
 3. 运行压测
 
-### 6.2 性能测试数据清理
+#### 6.2.2 性能测试数据清理
 
 压测后会产生大量测试数据，可使用脚本快速清理：
 
