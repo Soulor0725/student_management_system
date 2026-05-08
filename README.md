@@ -159,7 +159,35 @@ MySQL 下保留 `conn.commit()`，发生异常时可 `conn.rollback()`。
 
 ---
 
-## 6. 后续建议
+## 6. 性能测试
+
+### 6.1 JMeter 压测脚本
+
+项目包含 JMeter 压测脚本：`performance_test_jmeter/add_student.jmx`
+
+**功能说明**：
+- 自动化添加学生数据
+- 支持并发压力测试
+- 配套数据清理脚本
+
+**使用方式**：
+1. 使用 JMeter 打开 `performance_test_jmx/add_student.jmx`
+2. 配置目标服务器地址
+3. 运行压测
+
+### 6.2 性能测试数据清理
+
+压测后会产生大量测试数据，可使用脚本快速清理：
+
+```bash
+python performance_test_jmeter/delete_performanceTesting_data.py
+```
+
+**注意**：该脚本会删除 `students` 表中的所有数据，`users` 表不受影响。
+
+---
+
+## 7. 后续建议
 
 - 增加密码复杂度校验
 - 增加 CSRF 防护
