@@ -226,7 +226,28 @@ python -m pytest unit_test/test_app.py -v
 
 ---
 
-## 8. 后续建议
+## 8. 持续集成 CI/CD
+
+项目配置了 GitHub Actions：`.github/workflows/ci.yml`
+
+**功能**：
+- Push 和 PR 时自动运行单元测试
+- 自动检查 Flask 应用是否能正常启动
+
+**工作流**：
+1. 拉取代码
+2. 安装 Python 环境
+3. 安装依赖 (requirements.txt + pytest)
+4. 运行 `pytest unit_test/test_app.py`
+5. 验证 Flask 应用导入
+
+**状态查看**：
+- GitHub 仓库 → Actions 标签页
+- Push 后自动触发，无需手动操作
+
+---
+
+## 9. 后续建议
 
 - 增加密码复杂度校验
 - 增加 CSRF 防护
