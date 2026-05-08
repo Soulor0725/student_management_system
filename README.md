@@ -207,7 +207,26 @@ python performance_test_jmeter/delete_performanceTesting_data.py
 
 ---
 
-## 7. 后续建议
+## 7. 单元测试
+
+项目包含完整的单元测试：`unit_test/test_app.py`
+
+**测试覆盖**：
+- 密码哈希函数测试
+- 用户注册功能测试（空字段、成功、重复用户名）
+- 用户登录功能测试（错误密码、成功登录）
+- 学生管理功能测试（登录拦截、增删操作）
+
+**使用方式**：
+```bash
+cd student_management
+pip install pytest
+python -m pytest unit_test/test_app.py -v
+```
+
+---
+
+## 8. 后续建议
 
 - 增加密码复杂度校验
 - 增加 CSRF 防护
