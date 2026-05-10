@@ -370,7 +370,68 @@ python run_chaos_test.py --url http://localhost:5000 --scenario normal --duratio
 
 ---
 
-## 11. 后续建议
+## 11. API 接口测试
+
+项目包含完整的 API 接口测试套件，使用 pytest 框架实现。
+
+### 11.1 测试模块
+
+**目录结构**：
+```
+api_test/
+├─ conftest.py         # pytest 配置和钩子
+├─ test_api.py          # API 测试用例
+├─ run_api_tests.py     # 测试运行脚本
+└─ reports/             # 测试报告目录
+    ├─ api_test_report_*.md    # Markdown 报告
+    └─ api_test_report_*.json  # JSON 报告
+```
+
+### 11.2 测试覆盖
+
+| 测试类 | 测试内容 |
+|--------|---------|
+| TestAuthAPI | 用户注册、登录（正常+异常场景） |
+| TestStudentAPI | 学生增删改查、权限验证 |
+| TestMetricsAPI | Prometheus 监控指标接口 |
+| TestChaosAPI | 混沌测试 API |
+
+### 11.3 测试报告
+
+报告包含以下内容：
+- **测试会话信息**：整体开始/结束时间、总耗时
+- **测试摘要**：通过率、总测试数、通过/失败/跳过数
+- **接口请求统计**：每个接口的请求次数和占比
+- **测试结果详情**：每个测试的开始时间、结束时间、耗时
+- **场景分类**：正常场景和异常场景分类统计
+
+### 11.4 使用方式
+
+```bash
+# 运行 API 测试
+python api_test/run_api_tests.py
+
+# 查看最新报告
+ls api_test/reports/
+```
+
+### 11.5 报告示例
+
+测试报告会生成 Markdown 和 JSON 两种格式：
+
+```markdown
+## 测试结果详情
+
+| 序号 | 测试名称 | 接口 | 场景 | 状态 | 开始时间 | 结束时间 | 耗时 |
+|------|---------|------|------|------|----------|----------|------|
+| 1 | 用户注册成功 | POST /register | 正常 | ✅ passed | 18:31:24 | 18:31:26 | 2.048s |
+| 2 | 用户名为空注册 | POST /register | 异常 | ✅ passed | 18:31:24 | 18:31:28 | 2.088s |
+...
+```
+
+---
+
+## 12. 后续建议
 
 - 增加密码复杂度校验
 - 增加 CSRF 防护

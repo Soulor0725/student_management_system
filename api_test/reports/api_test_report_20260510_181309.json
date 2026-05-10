@@ -1,0 +1,226 @@
+{
+  "timestamp": "2026-05-10T18:13:09.103987",
+  "test_session": {
+    "start_time": "2026-05-10T18:11:43.389857",
+    "end_time": "2026-05-10T18:13:09.103947",
+    "total_duration": 85.71409
+  },
+  "total_tests": 20,
+  "passed": 20,
+  "failed": 0,
+  "skipped": 0,
+  "total_duration": 67.12102589999813,
+  "endpoint_stats": {
+    "POST /register": 4,
+    "POST /login": 5,
+    "POST /students": 5,
+    "GET /": 1,
+    "POST /students/<id>": 1,
+    "POST /students/<id>/delete": 1,
+    "GET /metrics": 1,
+    "GET /chaos/status": 1,
+    "POST /chaos/start, POST /chaos/stop": 1
+  },
+  "tests": [
+    {
+      "name": "test_register_success",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /register",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:11:45.534564",
+      "duration": 2.0679203999989113
+    },
+    {
+      "name": "test_register_empty_username",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /register",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:11:47.590667",
+      "duration": 2.0529834000008123
+    },
+    {
+      "name": "test_register_empty_password",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /register",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:11:49.630289",
+      "duration": 2.036517200000162
+    },
+    {
+      "name": "test_register_duplicate",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /register",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:11:51.667607",
+      "duration": 2.035213700000895
+    },
+    {
+      "name": "test_login_success",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /login",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:11:53.720966",
+      "duration": 2.0509094999997615
+    },
+    {
+      "name": "test_login_wrong_password",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /login",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:11:55.771006",
+      "duration": 2.04777920000015
+    },
+    {
+      "name": "test_login_nonexistent_user",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /login",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:11:57.827140",
+      "duration": 2.0544952000000194
+    },
+    {
+      "name": "test_login_empty_credentials",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /login",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:11:59.862364",
+      "duration": 2.0334105000001728
+    },
+    {
+      "name": "test_add_student_success",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:12:06.578680",
+      "duration": 4.664090899999792
+    },
+    {
+      "name": "test_add_student_empty_name",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:12:13.502074",
+      "duration": 4.861633099999381
+    },
+    {
+      "name": "test_add_student_invalid_age",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:12:20.334662",
+      "duration": 4.779722999999649
+    },
+    {
+      "name": "test_add_student_zero_age",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:12:27.140764",
+      "duration": 4.751117699999668
+    },
+    {
+      "name": "test_add_student_empty_class",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:12:34.163886",
+      "duration": 4.969613999999638
+    },
+    {
+      "name": "test_view_students",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "GET /",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:12:38.835164",
+      "duration": 2.6144851999997627
+    },
+    {
+      "name": "test_edit_student_success",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students/<id>",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:12:48.087136",
+      "duration": 7.193680200000017
+    },
+    {
+      "name": "test_delete_student_success",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students/<id>/delete",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:12:54.759612",
+      "duration": 4.617549700000382
+    },
+    {
+      "name": "test_access_without_login",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /login",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:13:00.897279",
+      "duration": 4.093709099999614
+    },
+    {
+      "name": "test_metrics_endpoint",
+      "class": "api_test/TestMetricsAPI",
+      "endpoint": "GET /metrics",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:13:02.962973",
+      "duration": 2.0624357999986387
+    },
+    {
+      "name": "test_chaos_status",
+      "class": "api_test/TestChaosAPI",
+      "endpoint": "GET /chaos/status",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:13:05.022188",
+      "duration": 2.0561450000004697
+    },
+    {
+      "name": "test_chaos_start_stop",
+      "class": "api_test/TestChaosAPI",
+      "endpoint": "POST /chaos/start, POST /chaos/stop",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-10T18:11:43.389857",
+      "end_time": "2026-05-10T18:13:09.102104",
+      "duration": 4.077613100000235
+    }
+  ]
+}
