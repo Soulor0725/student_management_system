@@ -37,8 +37,34 @@ student_management/
 ├─ templates/
 │  ├─ auth.html
 │  └─ index.html
-└─ static/
-   └─ style.css
+├─ static/
+│  └─ style.css
+├─ unit_test/
+│  └─ test_app.py
+├─ automation_test/
+│  ├─ conftest.py
+│  ├─ test_playwright.py
+│  └─ requirements.txt
+├─ performance_test_jmeter/
+│  ├─ add_student.jmx
+│  └─ delete_performanceTesting_data.py
+├─ chaos_test/
+│  ├─ chaos_injector.py
+│  ├─ chaos_api.py
+│  ├─ config.py
+│  └─ run_chaos_test.py
+├─ monitoring/
+│  ├─ prometheus.yml
+│  └─ student-management-dashboard.json
+├─ api_test/
+│  ├─ conftest.py
+│  ├─ test_api.py
+│  ├─ run_api_tests.py
+│  └─ reports/
+├─ .github/
+│  └─ workflows/
+│     └─ ci.yml
+└─ .gitignore
 ```
 
 ---
