@@ -12,11 +12,52 @@ app.secret_key = "student-management-secret"
 
 # 集成混沌测试
 try:
-    from chaos_test.chaos_api import chaos_bp
+    from chaos_test.chaos_api import chaos_bp, chaos_controller
     app.register_blueprint(chaos_bp)
     print("[CHAOS] 混沌测试模块已加载")
 except ImportError:
     print("[CHAOS] 混沌测试模块未找到")
+    chaos_controller = None
+
+# 全局混沌测试钩子
+@app.before_request
+def chaos_before_request():
+    import random
+    from flask import abort, request
+    
+    # 跳过混沌测试API端点
+    if request.path.startswith('/chaos/'):
+        return
+    
+    # 如果混沌控制器未加载，跳过
+    if chaos_controller is None:
+        return
+        
+    # 获取当前混沌测试状态
+    status = chaos_controller.status()
+    if not status.get('enabled', False):
+        return
+        
+    probability = status.get('probability', 0.1)
+    
+    if random.random() < probability:
+        failure_type = random.choice(['latency', 'error'])
+        
+        if failure_type == 'latency':
+            delay = random.uniform(0.1, 3)
+            import time
+            time.sleep(delay)
+            print(f"[CHAOS] 注入延迟: {delay:.2f}s")
+            
+        elif failure_type == 'error':
+            errors = [
+                {'code': 500, 'message': 'Internal Server Error (Chaos)'},
+                {'code': 503, 'message': 'Service Unavailable (Chaos)'},
+                {'code': 408, 'message': 'Request Timeout (Chaos)'}
+            ]
+            error = random.choice(errors)
+            print(f"[CHAOS] 注入错误: {error['code']} - {error['message']}")
+            abort(error['code'], description=error['message'])
 
 # Prometheus 监控指标 - 兼容官方 Grafana 模板
 metrics = PrometheusMetrics(app)

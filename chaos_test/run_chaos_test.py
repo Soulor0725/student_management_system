@@ -4,15 +4,27 @@ import json
 import argparse
 from datetime import datetime
 
+# 场景配置
+SCENARIOS = {
+    'light': {'probability': 0.05, 'name': '轻度混沌'},
+    'normal': {'probability': 0.1, 'name': '标准混沌'},
+    'heavy': {'probability': 0.2, 'name': '重度混沌'},
+    'extreme': {'probability': 0.5, 'name': '极端混沌'}
+}
+
 def run_chaos_scenario(base_url, scenario='normal', duration=60):
     """运行混沌测试场景"""
-    print(f"\n=== 开始混沌测试场景: {scenario} ===")
+    scenario_config = SCENARIOS.get(scenario, SCENARIOS['normal'])
+    probability = scenario_config['probability']
+    
+    print(f"\n=== 开始混沌测试场景: {scenario_config['name']} ===")
     print(f"测试时长: {duration} 秒")
+    print(f"故障概率: {probability*100}%")
     print(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # 启动混沌测试
     try:
-        response = requests.post(f"{base_url}/chaos/start", json={'probability': 0.1})
+        response = requests.post(f"{base_url}/chaos/start", json={'probability': probability})
         if response.status_code == 200:
             print("✅ 混沌测试已启动")
         else:
