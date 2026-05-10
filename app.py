@@ -10,6 +10,14 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 app = Flask(__name__)
 app.secret_key = "student-management-secret"
 
+# 集成混沌测试
+try:
+    from chaos_test.chaos_api import chaos_bp
+    app.register_blueprint(chaos_bp)
+    print("[CHAOS] 混沌测试模块已加载")
+except ImportError:
+    print("[CHAOS] 混沌测试模块未找到")
+
 # Prometheus 监控指标 - 兼容官方 Grafana 模板
 metrics = PrometheusMetrics(app)
 

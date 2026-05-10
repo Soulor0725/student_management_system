@@ -296,11 +296,86 @@ grafana-server.exe start
 
 ---
 
-## 10. 后续建议
+## 10. 混沌测试（Chaos Engineering）
+
+项目集成了混沌测试功能，用于验证系统在故障场景下的稳定性。
+
+### 10.1 混沌测试模块
+
+**目录结构**：
+```
+chaos_test/
+├─ chaos_injector.py    # 故障注入核心模块
+├─ chaos_api.py         # 混沌测试 API 控制器
+├─ config.py            # 混沌测试配置
+└─ run_chaos_test.py    # 混沌测试运行脚本
+```
+
+### 10.2 支持的故障类型
+
+| 故障类型 | 说明 | 严重程度 |
+|---------|------|---------|
+| `latency` | 随机延迟 0.1-3 秒 | 低 |
+| `error` | 随机返回 500/503/408 错误 | 中 |
+| `timeout` | 模拟请求超时 | 高 |
+| `db_failure` | 模拟数据库连接失败 | 严重 |
+
+### 10.3 API 接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/chaos/status` | GET | 获取混沌测试状态 |
+| `/chaos/start` | POST | 启动混沌测试 |
+| `/chaos/stop` | POST | 停止混沌测试 |
+| `/chaos/toggle` | POST | 切换混沌测试状态 |
+| `/chaos/config` | PUT | 更新混沌测试配置 |
+
+### 10.4 使用方式
+
+**方式1：通过 API 控制**
+```bash
+# 启动混沌测试（默认10%故障概率）
+curl -X POST http://localhost:5000/chaos/start
+
+# 启动混沌测试（设置20%故障概率）
+curl -X POST http://localhost:5000/chaos/start -H "Content-Type: application/json" -d '{"probability": 0.2}'
+
+# 查看状态
+curl http://localhost:5000/chaos/status
+
+# 停止混沌测试
+curl -X POST http://localhost:5000/chaos/stop
+```
+
+**方式2：使用运行脚本**
+```bash
+cd chaos_test
+python run_chaos_test.py --url http://localhost:5000 --scenario normal --duration 60
+```
+
+### 10.5 预设场景
+
+| 场景 | 故障概率 | 故障类型 |
+|------|---------|---------|
+| `light` | 5% | 延迟 |
+| `normal` | 10% | 延迟、错误 |
+| `heavy` | 20% | 延迟、错误、超时 |
+| `extreme` | 30% | 全部类型 |
+
+### 10.6 注意事项
+
+- 混沌测试仅用于测试环境，**请勿在生产环境启用**
+- 启用混沌测试后，系统会随机模拟故障，可能影响正常测试
+- 建议在性能监控配合下进行混沌测试，观察系统响应
+
+---
+
+## 11. 后续建议
 
 - 增加密码复杂度校验
 - 增加 CSRF 防护
 - 增加管理员角色和权限控制
 - 增加按姓名/班级搜索与分页
 - 添加分布式追踪（OpenTelemetry + Jaeger）
+- 扩展混沌测试场景（网络分区、资源耗尽等）
 
