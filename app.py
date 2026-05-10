@@ -3,10 +3,23 @@ import sqlite3
 from pathlib import Path
 
 from flask import Flask, redirect, render_template, request, session, url_for
+from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 
 app = Flask(__name__)
 app.secret_key = "student-management-secret"
+
+# Prometheus 监控指标 - 兼容官方 Grafana 模板
+metrics = PrometheusMetrics(app)
+
+# 通用指标（兼容官方模板）
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['endpoint', 'method', 'status'])
+REQUEST_LATENCY = Histogram('http_request_duration_seconds', 'HTTP request duration', ['endpoint', 'method'])
+
+# 应用特定指标
+APP_REQUEST_COUNT = Counter('app_requests_total', 'Total app requests', ['endpoint', 'method', 'status'])
+APP_REQUEST_LATENCY = Histogram('app_request_latency_seconds', 'App request latency', ['endpoint'])
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -224,6 +237,12 @@ def delete_student(student_id):
     return redirect(url_for("index"))
 
 
+@app.route('/metrics')
+def metrics():
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
+
+
 if __name__ == "__main__":
     init_db()
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

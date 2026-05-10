@@ -247,10 +247,60 @@ python -m pytest unit_test/test_app.py -v
 
 ---
 
-## 9. 后续建议
+## 9. 性能监控（Prometheus + Grafana）
+
+项目集成了 Prometheus + Grafana 监控方案，可实时监控接口请求指标。
+
+### 9.1 监控配置
+
+**Prometheus 配置**：
+- 配置文件：`monitoring/prometheus.yml`
+- 默认抓取地址：`http://localhost:5000/metrics`
+- 抓取间隔：5秒
+
+**Flask 应用指标**：
+- `flask_http_request_total` - 请求总数（含 path, method, status 标签）
+- `flask_http_request_duration_seconds` - 请求耗时（直方图）
+
+### 9.2 启动监控
+
+**启动 Prometheus**：
+```bash
+cd C:\Users\Administrator\Documents\Downloads\prometheus-3.11.3.windows-amd64
+prometheus.exe --config.file=prometheus.yml
+```
+
+**启动 Grafana**：
+```bash
+grafana-server.exe start
+```
+
+### 9.3 导入仪表盘
+
+1. 打开 Grafana：`http://localhost:3000`
+2. 配置 Prometheus 数据源
+3. 导入仪表盘文件：`monitoring/student-management-dashboard.json`
+
+### 9.4 仪表盘面板
+
+| 面板 | 说明 |
+|------|------|
+| 总请求数 | 所有接口总请求量趋势 |
+| 按接口路径统计请求数 | 各接口请求数量对比 |
+| 成功请求数(200) | 成功请求总数 |
+| 非200请求数 | 失败请求总数 |
+| 平均请求延迟 | 整体平均延迟趋势 |
+| 各接口平均耗时(秒) | 各接口平均耗时对比 |
+| 各接口失败请求数 | 各接口失败请求统计 |
+| 状态码分布 | 饼图展示状态码占比 |
+
+---
+
+## 10. 后续建议
 
 - 增加密码复杂度校验
 - 增加 CSRF 防护
 - 增加管理员角色和权限控制
 - 增加按姓名/班级搜索与分页
+- 添加分布式追踪（OpenTelemetry + Jaeger）
 
