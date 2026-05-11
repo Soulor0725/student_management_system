@@ -10,6 +10,7 @@ class TestEndToEndIntegration:
         端到端测试：用户注册 -> 登录 -> 访问首页
         验证完整的用户认证流程
         """
+        print(f"[集成测试] 正在执行: 用户注册登录流程")
         # Step 1: 用户注册
         register_response = client.post('/register', data={
             'username': test_user['username'],
@@ -34,6 +35,7 @@ class TestEndToEndIntegration:
         端到端测试：添加学生 -> 查看列表 -> 编辑 -> 删除
         验证学生管理完整生命周期
         """
+        print(f"[集成测试] 正在执行: 学生完整生命周期")
         # 先登录
         client.post('/register', data=test_user)
         client.post('/login', data=test_user)
@@ -52,6 +54,7 @@ class TestEndToEndIntegration:
         端到端测试：会话持久化验证
         验证登录状态在多个请求间保持
         """
+        print(f"[集成测试] 正在执行: 用户会话持久化")
         # 注册并登录
         client.post('/register', data=test_user)
         client.post('/login', data=test_user)
@@ -74,6 +77,7 @@ class TestEndToEndIntegration:
         端到端测试：未认证用户访问控制
         验证未登录用户无法访问受保护页面
         """
+        print(f"[集成测试] 正在执行: 未认证用户访问控制")
         # 清理session确保未登录状态
         with client.session_transaction() as sess:
             sess.clear()
@@ -86,6 +90,7 @@ class TestEndToEndIntegration:
         """
         端到端测试：注册 -> 登录 -> 登出完整流程
         """
+        print(f"[集成测试] 正在执行: 注册登录登出完整流程")
         # Step 1: 注册
         client.post('/register', data=test_user)
 
@@ -109,6 +114,7 @@ class TestEndToEndIntegration:
         端到端测试：并发用户操作
         验证多个用户可以独立操作
         """
+        print(f"[集成测试] 正在执行: 并发用户操作")
         user1 = {'username': 'user1_int', 'password': 'pass1'}
         user2 = {'username': 'user2_int', 'password': 'pass2'}
         student1 = {'name': 'User1Student', 'age': '16', 'class_name': 'Grade1Class1'}
@@ -136,6 +142,7 @@ class TestEndToEndIntegration:
         端到端测试：监控指标集成
         验证监控接口正常工作
         """
+        print(f"[集成测试] 正在执行: 监控指标集成")
         # 登录
         client.post('/register', data=test_user)
         client.post('/login', data=test_user)
@@ -159,6 +166,7 @@ class TestEndToEndIntegration:
         端到端测试：混沌测试集成
         验证混沌测试功能与主系统集成
         """
+        print(f"[集成测试] 正在执行: 混沌测试集成")
         # 登录
         client.post('/register', data=test_user)
         client.post('/login', data=test_user)
@@ -188,6 +196,7 @@ class TestEndToEndIntegration:
         端到端测试：数据持久化验证
         验证数据在请求间持久化
         """
+        print(f"[集成测试] 正在执行: 数据持久化验证")
         # 第一次会话：注册、登录、添加学生
         client.post('/register', data=test_user)
         client.post('/login', data=test_user)

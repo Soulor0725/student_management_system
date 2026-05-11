@@ -478,11 +478,14 @@ def main() -> None:
             executable_path=r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             headless=False,
             slow_mo=400,
-            args=["--start-maximized"]
+            args=["--start-maximized", "--window-size=1920,1080"]
         )
         
-        # 创建页面
-        page = browser.new_page()
+        # 创建页面，设置视口大小
+        page = browser.new_page(viewport={"width": 1920, "height": 1080})
+        
+        # 设置浏览器窗口大小
+        page.set_viewport_size({"width": 1920, "height": 1080})
         
         # 等待页面完全加载
         page.wait_for_load_state("networkidle")

@@ -66,7 +66,7 @@ def run_pytest(test_path, stage_name):
     os.makedirs(ALLURE_RESULTS_DIR, exist_ok=True)
     
     # 运行pytest - 使用实时输出模式，禁用输出捕获
-    cmd = f"python -m pytest {test_path} -v --tb=short"
+    cmd = f"python -m pytest {test_path} -v --tb=short -s"
     cwd = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     result = run_command(cmd, cwd=cwd, live_output=False)
     
@@ -111,16 +111,86 @@ def run_chaos_test():
     return result
 
 
+def is_port_in_use(port):
+    """检查指定端口是否被占用"""
+    try:
+        with requests.get(f"http://localhost:{port}/login", timeout=2):
+            return True
+    except requests.exceptions.RequestException:
+        return False
+
+
+def kill_process_on_port(port):
+    """杀掉占用指定端口的进程"""
+    print(f"  正在查找并杀掉占用端口 {port} 的进程...")
+    
+    if sys.platform == "win32":
+        # Windows系统使用netstat和taskkill
+        try:
+            # 获取占用端口的进程ID
+            result = subprocess.run(
+                ["netstat", "-ano", "|", "findstr", f":{port}"],
+                capture_output=True,
+                text=True,
+                shell=True
+            )
+            if result.stdout:
+                # 解析进程ID
+                lines = result.stdout.strip().split('\n')
+                for line in lines:
+                    parts = line.split()
+                    if len(parts) >= 5:
+                        pid = parts[-1]
+                        print(f"    找到进程 PID: {pid}")
+                        # 杀掉进程
+                        subprocess.run(
+                            ["taskkill", "/F", "/PID", pid],
+                            capture_output=True
+                        )
+                        print(f"    已杀掉进程 PID: {pid}")
+                        time.sleep(1)
+        except Exception as e:
+            print(f"    查找进程失败: {e}")
+    else:
+        # Linux/macOS系统使用lsof和kill
+        try:
+            result = subprocess.run(
+                ["lsof", "-ti", f":{port}"],
+                capture_output=True,
+                text=True
+            )
+            if result.stdout:
+                pids = result.stdout.strip().split('\n')
+                for pid in pids:
+                    if pid:
+                        print(f"    找到进程 PID: {pid}")
+                        subprocess.run(["kill", "-9", pid])
+                        print(f"    已杀掉进程 PID: {pid}")
+                        time.sleep(1)
+        except Exception as e:
+            print(f"    查找进程失败: {e}")
+
+
 def start_flask_app():
-    """启动Flask应用"""
+    """启动Flask应用（包含状态检测和强制重启）"""
     global FLASK_PROCESS
+    PORT = 5000
+    
     print("\n" + "="*60)
-    print("  正在启动 Flask 应用...")
+    print("  应用状态检测与启动")
     print("="*60)
     
+    # 检查应用是否已启动
+    if is_port_in_use(PORT):
+        print(f"  ⚠️ 检测到端口 {PORT} 已被占用，应用可能已启动")
+        print("  正在强制关闭现有进程...")
+        kill_process_on_port(PORT)
+        time.sleep(2)
+    
+    # 启动Flask应用
+    print("\n  正在启动 Flask 应用...")
     cwd = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
-    # 使用subprocess.Popen启动Flask应用
     if sys.platform == "win32":
         FLASK_PROCESS = subprocess.Popen(
             ["python", "app.py"],
@@ -135,20 +205,28 @@ def start_flask_app():
         )
     
     # 等待应用启动
-    print("等待应用启动 (5秒)...")
+    print("  等待应用启动 (5秒)...")
     time.sleep(5)
     
     # 检查应用是否成功启动
-    try:
-        response = requests.get("http://localhost:5000/login", timeout=5)
-        if response.status_code == 200:
-            print("✅ Flask 应用启动成功！")
-            return True
-    except Exception as e:
-        print(f"⚠️ 应用启动检查失败: {e}")
-        print("继续执行测试...")
+    max_retries = 3
+    retry_count = 0
     
-    return True
+    while retry_count < max_retries:
+        try:
+            response = requests.get(f"http://localhost:{PORT}/login", timeout=5)
+            if response.status_code == 200:
+                print("  ✅ Flask 应用启动成功！")
+                return True
+        except Exception as e:
+            retry_count += 1
+            print(f"  ⚠️ 应用启动检查失败 ({retry_count}/{max_retries}): {e}")
+            if retry_count < max_retries:
+                print("  等待2秒后重试...")
+                time.sleep(2)
+    
+    print("  ❌ 应用启动失败，请检查应用配置")
+    return False
 
 
 def stop_flask_app():
