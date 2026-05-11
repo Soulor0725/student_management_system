@@ -21,3 +21,6 @@ Thumbs.db
 # Logs
 logs
 *.log
+
+# Email Configuration
+email_config.py

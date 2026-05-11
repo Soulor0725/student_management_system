@@ -1,0 +1,12 @@
+# 邮件配置示例文件
+# 复制此文件为 email_config.py 并填写实际配置
+# 此文件已添加到 .gitignore，不会被提交到GitHub
+
+EMAIL_CONFIG = {
+    "smtp_server": "smtp.qq.com",
+    "smtp_port": 465,
+    "sender": "your_email@qq.com",
+    "password": "your_smtp_password",
+    "recipient": "recipient_email@qq.com",
+    "subject": "学生管理系统测试报告"
+}

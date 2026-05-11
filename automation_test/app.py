@@ -28,15 +28,19 @@ STUDENT_CLASS = "21131"
 STEP_WAIT_MS = 1200
 DB_FILE = Path(__file__).resolve().parent.parent / "data" / "student_management.db"
 
-# 邮件配置
-EMAIL_CONFIG = {
-    "smtp_server": "smtp.qq.com",
-    "smtp_port": 465,
-    "sender": "249379218@qq.com",  # 发件人QQ邮箱
-    "password": "afnimcejgiygbhij",  # QQ邮箱SMTP授权码
-    "recipient": "249379218@qq.com",  # 收件人邮箱
-    "subject": "自动化测试报告"
-}
+# 邮件配置 - 从外部配置文件读取
+try:
+    from email_config import EMAIL_CONFIG
+except ImportError:
+    # 如果配置文件不存在，使用默认占位符
+    EMAIL_CONFIG = {
+        "smtp_server": "smtp.qq.com",
+        "smtp_port": 465,
+        "sender": "your_email@qq.com",
+        "password": "your_smtp_password",
+        "recipient": "recipient@example.com",
+        "subject": "自动化测试报告"
+    }
 
 
 def cleanup_old_screenshots(hours=1):

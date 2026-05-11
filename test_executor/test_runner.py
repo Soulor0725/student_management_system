@@ -16,15 +16,20 @@ from email.header import Header
 from datetime import datetime
 from config import TEST_STAGES, EXECUTION_ORDER, REPORTS_DIR, ALLURE_RESULTS_DIR, ALLURE_REPORT_DIR
 
-# 邮件配置
-EMAIL_CONFIG = {
-    "smtp_server": "smtp.qq.com",
-    "smtp_port": 465,
-    "sender": "249379218@qq.com",
-    "password": "afnimcejgiygbhij",
-    "recipient": "249379218@qq.com",
-    "subject": "学生管理系统测试报告"
-}
+# 邮件配置 - 从外部配置文件读取
+try:
+    from email_config import EMAIL_CONFIG
+except ImportError:
+    # 如果配置文件不存在，使用默认占位符
+    EMAIL_CONFIG = {
+        "smtp_server": "smtp.qq.com",
+        "smtp_port": 465,
+        "sender": "your_email@qq.com",
+        "password": "your_smtp_password",
+        "recipient": "recipient@example.com",
+        "subject": "学生管理系统测试报告"
+    }
+    print("⚠️ 未找到 email_config.py，使用默认配置。请复制 email_config.py.example 并配置实际邮箱信息。")
 
 FLASK_PROCESS = None
 
@@ -249,8 +254,8 @@ def stop_flask_app():
         print("⚠️ 没有找到运行的Flask进程")
 
 
-def send_email_report(report_path):
-    """发送测试报告邮件"""
+def send_email_report(report_path, results=None):
+    """发送测试报告邮件（包含详细HTML内容）"""
     print("\n" + "="*60)
     print("  正在发送测试报告邮件...")
     print("="*60)
@@ -262,12 +267,117 @@ def send_email_report(report_path):
         msg['To'] = EMAIL_CONFIG["recipient"]
         msg['Subject'] = Header(EMAIL_CONFIG["subject"], 'utf-8')
         
-        # 邮件正文
+        # 计算统计数据
+        if results:
+            total_tests = sum(r.get('passed', 0) + r.get('failed', 0) for r in results)
+            total_passed = sum(r.get('passed', 0) for r in results)
+            total_failed = sum(r.get('failed', 0) for r in results)
+            pass_rate = (total_passed / total_tests * 100) if total_tests > 0 else 0
+            
+            # 获取测试时间范围
+            if results:
+                start_time = results[0].get('start_time', datetime.now())
+                end_time = results[-1].get('end_time', datetime.now())
+            else:
+                start_time = end_time = datetime.now()
+        else:
+            total_tests = total_passed = total_failed = 0
+            pass_rate = 0
+            start_time = end_time = datetime.now()
+        
+        # 邮件正文 - 参考自动化测试报告样式
         body = f"""
-        <h2>学生管理系统测试报告</h2>
-        <p>测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-        <p>详细报告请查看附件。</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                h1 {{ color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }}
+                h2 {{ color: #666; margin-top: 20px; }}
+                table {{ border-collapse: collapse; width: 100%; margin-top: 10px; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                th {{ background-color: #f2f2f2; }}
+                .passed {{ color: green; font-weight: bold; }}
+                .failed {{ color: red; font-weight: bold; }}
+                .summary {{ display: flex; justify-content: space-between; align-items: center; }}
+                .pie-chart {{ width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(
+                    green {pass_rate}%, 
+                    red {pass_rate}% 100%
+                ); position: relative; }}
+                .pie-center {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                           background: white; width: 70px; height: 70px; border-radius: 50%; 
+                           display: flex; flex-direction: column; align-items: center; justify-content: center; }}
+                .pie-label {{ font-size: 12px; text-align: center; }}
+                .stats-table {{ width: 60%; }}
+            </style>
+        </head>
+        <body>
+            <h1>学生管理系统测试报告</h1>
+            
+            <p><strong>测试开始时间:</strong> {start_time}</p>
+            <p><strong>测试结束时间:</strong> {end_time}</p>
+            
+            <h2>测试统计</h2>
+            <div class="summary">
+                <div class="pie-chart">
+                    <div class="pie-center">
+                        <div class="pie-label" style="font-size: 18px; font-weight: bold;">{pass_rate:.1f}%</div>
+                        <div class="pie-label">通过率</div>
+                    </div>
+                </div>
+                <table class="stats-table">
+                    <tr><th>总用例数</th><th>失败</th><th>通过</th><th>通过率</th></tr>
+                    <tr>
+                        <td style="text-align: center; font-size: 18px;">{total_tests}</td>
+                        <td style="text-align: center; font-size: 18px; color: red;">{total_failed}</td>
+                        <td style="text-align: center; font-size: 18px; color: green;">{total_passed}</td>
+                        <td style="text-align: center; font-size: 18px;">{pass_rate:.1f}%</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <h2>各阶段测试详情</h2>
+            <table>
+                <tr>
+                    <th>序号</th>
+                    <th>阶段名称</th>
+                    <th>开始时间</th>
+                    <th>结束时间</th>
+                    <th>耗时</th>
+                    <th>通过</th>
+                    <th>失败</th>
+                    <th>状态</th>
+                </tr>
         """
+        
+        if results:
+            for i, stage in enumerate(results, 1):
+                status = "✅ 通过" if stage.get('success', False) else "❌ 失败"
+                status_class = "passed" if stage.get('success', False) else "failed"
+                body += f"""
+                <tr>
+                    <td>{i}</td>
+                    <td>{stage.get('name', 'N/A')}</td>
+                    <td>{stage.get('start_time', 'N/A')}</td>
+                    <td>{stage.get('end_time', 'N/A')}</td>
+                    <td>{stage.get('duration', 'N/A')}</td>
+                    <td>{stage.get('passed', 0)}</td>
+                    <td>{stage.get('failed', 0)}</td>
+                    <td class="{status_class}">{status}</td>
+                </tr>
+                """
+        
+        body += """
+            </table>
+            
+            <p style="margin-top: 20px; color: #666; font-size: 12px;">
+                详细报告请查看附件。
+            </p>
+        </body>
+        </html>
+        """
+        
         msg.attach(MIMEText(body, 'html', 'utf-8'))
         
         # 添加附件
@@ -449,7 +559,7 @@ def main():
     
     # 发送邮件报告
     if not args.no_email:
-        send_email_report(report_path)
+        send_email_report(report_path, results)
 
 if __name__ == "__main__":
     main()
