@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-05-11T16:44:04.299541",
+  "total_stages": 7,
+  "passed_stages": 7,
+  "failed_stages": 0,
+  "stages": [
+    {
+      "name": "单元测试",
+      "stage": "unit",
+      "success": true,
+      "duration": "12.76s",
+      "returncode": 0,
+      "passed": 14,
+      "failed": 0,
+      "start_time": "2026-05-11 16:38:49",
+      "end_time": "2026-05-11 16:39:02"
+    },
+    {
+      "name": "API接口测试",
+      "stage": "api",
+      "success": true,
+      "duration": "86.94s",
+      "returncode": 0,
+      "passed": 20,
+      "failed": 0,
+      "start_time": "2026-05-11 16:39:02",
+      "end_time": "2026-05-11 16:40:29"
+    },
+    {
+      "name": "集成测试",
+      "stage": "integration",
+      "success": true,
+      "duration": "12.42s",
+      "returncode": 0,
+      "passed": 11,
+      "failed": 0,
+      "start_time": "2026-05-11 16:40:29",
+      "end_time": "2026-05-11 16:40:41"
+    },
+    {
+      "name": "安全测试",
+      "stage": "security",
+      "success": true,
+      "duration": "15.04s",
+      "returncode": 0,
+      "passed": 26,
+      "failed": 0,
+      "start_time": "2026-05-11 16:40:41",
+      "end_time": "2026-05-11 16:40:56"
+    },
+    {
+      "name": "自动化测试",
+      "stage": "automation",
+      "success": true,
+      "duration": "172.70s",
+      "returncode": 0,
+      "passed": 2,
+      "failed": 2,
+      "start_time": "2026-05-11 16:40:56",
+      "end_time": "2026-05-11 16:43:49"
+    },
+    {
+      "name": "性能测试",
+      "stage": "performance",
+      "success": true,
+      "duration": "跳过",
+      "passed": 0,
+      "failed": 0,
+      "message": "性能测试需要JMeter环境，已跳过",
+      "start_time": "2026-05-11 16:43:49",
+      "end_time": "2026-05-11 16:43:49"
+    },
+    {
+      "name": "混沌测试",
+      "stage": "chaos",
+      "success": true,
+      "duration": "14.88s",
+      "returncode": 0,
+      "passed": 4,
+      "failed": 0,
+      "start_time": "2026-05-11 16:43:49",
+      "end_time": "2026-05-11 16:44:04"
+    }
+  ]
+}

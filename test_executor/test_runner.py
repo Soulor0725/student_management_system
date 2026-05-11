@@ -14,6 +14,11 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.header import Header
 from datetime import datetime
+
+# 添加项目根目录到Python路径
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
 from config import TEST_STAGES, EXECUTION_ORDER, REPORTS_DIR, ALLURE_RESULTS_DIR, ALLURE_REPORT_DIR
 
 # 邮件配置 - 从外部配置文件读取
@@ -37,12 +42,16 @@ def run_command(cmd, cwd=None, live_output=False):
     """执行命令并返回结果"""
     try:
         if live_output:
-            # 实时输出模式
-            result = subprocess.run(cmd, shell=True, text=True, cwd=cwd)
+            # 实时输出模式 - 同时保存输出以便解析
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd)
+            # 实时打印输出
+            print(result.stdout)
+            if result.stderr:
+                print("错误信息:", result.stderr)
             return {
                 "success": result.returncode == 0,
-                "stdout": "",
-                "stderr": "",
+                "stdout": result.stdout,
+                "stderr": result.stderr,
                 "returncode": result.returncode
             }
         else:
@@ -274,16 +283,55 @@ def send_email_report(report_path, results=None):
             total_failed = sum(r.get('failed', 0) for r in results)
             pass_rate = (total_passed / total_tests * 100) if total_tests > 0 else 0
             
-            # 获取测试时间范围
-            if results:
-                start_time = results[0].get('start_time', datetime.now())
-                end_time = results[-1].get('end_time', datetime.now())
-            else:
-                start_time = end_time = datetime.now()
+            # 获取测试时间范围（第一条用例开始时间，最后一条用例结束时间）
+            test_start_time = results[0].get('start_time', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            test_end_time = results[-1].get('end_time', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         else:
             total_tests = total_passed = total_failed = 0
             pass_rate = 0
-            start_time = end_time = datetime.now()
+            test_start_time = test_end_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # 计算各阶段用例占比（用于饼图）
+        stage_percentages = []
+        stage_success_percentages = []
+        stage_failed_percentages = []
+        
+        for stage in results:
+            stage_tests = stage.get('passed', 0) + stage.get('failed', 0)
+            stage_passed = stage.get('passed', 0)
+            stage_failed = stage.get('failed', 0)
+            
+            # 总用例占比
+            if total_tests > 0:
+                percentage = (stage_tests / total_tests) * 100
+                success_percentage = (stage_passed / total_tests) * 100
+                failed_percentage = (stage_failed / total_tests) * 100 if total_failed > 0 else 0
+            else:
+                percentage = success_percentage = failed_percentage = 0
+            
+            stage_percentages.append({
+                'name': stage.get('name', 'N/A'),
+                'percentage': percentage,
+                'tests': stage_tests
+            })
+            
+            stage_success_percentages.append({
+                'name': stage.get('name', 'N/A'),
+                'percentage': success_percentage,
+                'passed': stage_passed
+            })
+            
+            stage_failed_percentages.append({
+                'name': stage.get('name', 'N/A'),
+                'percentage': failed_percentage,
+                'failed': stage_failed
+            })
+        
+        # 失败率
+        fail_rate = (total_failed / total_tests * 100) if total_tests > 0 else 0
+        
+        # 生成饼图颜色
+        colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#f44336', '#E91E63', '#00BCD4']
         
         # 邮件正文 - 参考自动化测试报告样式
         body = f"""
@@ -301,43 +349,89 @@ def send_email_report(report_path, results=None):
                 .passed {{ color: green; font-weight: bold; }}
                 .failed {{ color: red; font-weight: bold; }}
                 .summary {{ display: flex; justify-content: space-between; align-items: center; }}
-                .pie-chart {{ width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(
-                    green {pass_rate}%, 
-                    red {pass_rate}% 100%
-                ); position: relative; }}
+                .pie-container {{ display: flex; gap: 30px; align-items: center; flex-wrap: wrap; }}
+                .pie-chart {{ width: 120px; height: 120px; border-radius: 50%; position: relative; }}
                 .pie-center {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
                            background: white; width: 70px; height: 70px; border-radius: 50%; 
                            display: flex; flex-direction: column; align-items: center; justify-content: center; }}
                 .pie-label {{ font-size: 12px; text-align: center; }}
-                .stats-table {{ width: 60%; }}
+                .stats-table {{ width: 100%; margin-top: 20px; }}
+                .pie-item {{ text-align: center; }}
             </style>
         </head>
         <body>
             <h1>学生管理系统测试报告</h1>
             
-            <p><strong>测试开始时间:</strong> {start_time}</p>
-            <p><strong>测试结束时间:</strong> {end_time}</p>
+            <p><strong>测试开始时间:</strong> {test_start_time}</p>
+            <p><strong>测试结束时间:</strong> {test_end_time}</p>
             
             <h2>测试统计</h2>
-            <div class="summary">
-                <div class="pie-chart">
-                    <div class="pie-center">
-                        <div class="pie-label" style="font-size: 18px; font-weight: bold;">{pass_rate:.1f}%</div>
-                        <div class="pie-label">通过率</div>
+            <div class="pie-container">
+                <div class="pie-item">
+                    <div class="pie-chart" style="background: conic-gradient(green {pass_rate}%, red {pass_rate}% 100%);">
+                        <div class="pie-center">
+                            <div class="pie-label" style="font-size: 18px; font-weight: bold;">{pass_rate:.1f}%</div>
+                            <div class="pie-label">通过率</div>
+                        </div>
                     </div>
+                    <p style="text-align: center; margin-top: 10px; font-size: 14px; color: #666;">测试通过率</p>
                 </div>
-                <table class="stats-table">
-                    <tr><th>总用例数</th><th>失败</th><th>通过</th><th>通过率</th></tr>
-                    <tr>
-                        <td style="text-align: center; font-size: 18px;">{total_tests}</td>
-                        <td style="text-align: center; font-size: 18px; color: red;">{total_failed}</td>
-                        <td style="text-align: center; font-size: 18px; color: green;">{total_passed}</td>
-                        <td style="text-align: center; font-size: 18px;">{pass_rate:.1f}%</td>
-                    </tr>
-                </table>
+                <div class="pie-item">
+                    <div class="pie-chart" style="background: conic-gradient({','.join([f'{colors[i % len(colors)]} {sum(s["percentage"] for s in stage_success_percentages[:i+1])}%' for i in range(len(stage_success_percentages))])});">
+                        <div class="pie-center">
+                            <div class="pie-label" style="font-size: 18px; font-weight: bold;">{total_passed}</div>
+                            <div class="pie-label">成功数</div>
+                        </div>
+                    </div>
+                    <p style="text-align: center; margin-top: 10px; font-size: 14px; color: #666;">各阶段成功占比</p>
+                </div>
+                <div class="pie-item">
+                    <div class="pie-chart" style="background: conic-gradient(red {fail_rate}%, #f0f0f0 {fail_rate}% 100%);">
+                        <div class="pie-center">
+                            <div class="pie-label" style="font-size: 18px; font-weight: bold;">{total_failed}</div>
+                            <div class="pie-label">失败数</div>
+                        </div>
+                    </div>
+                    <p style="text-align: center; margin-top: 10px; font-size: 14px; color: #666;">失败占比 {fail_rate:.1f}%</p>
+                </div>
             </div>
             
+            <table class="stats-table">
+                <tr><th>总用例数</th><th>失败</th><th>通过</th><th>通过率</th><th>失败率</th></tr>
+                <tr>
+                    <td style="text-align: center; font-size: 18px;">{total_tests}</td>
+                    <td style="text-align: center; font-size: 18px; color: red;">{total_failed}</td>
+                    <td style="text-align: center; font-size: 18px; color: green;">{total_passed}</td>
+                    <td style="text-align: center; font-size: 18px; color: green;">{pass_rate:.1f}%</td>
+                    <td style="text-align: center; font-size: 18px; color: red;">{fail_rate:.1f}%</td>
+                </tr>
+            </table>
+            
             <h2>各阶段测试详情</h2>
+            <table style="width: 100%;">
+                <tr><th>阶段名称</th><th>用例数</th><th>成功数</th><th>失败数</th><th>成功率</th><th>颜色</th></tr>
+        """
+        
+        for i, stage in enumerate(stage_success_percentages):
+            passed = stage['passed']
+            failed = stage_failed_percentages[i]['failed']
+            total = passed + failed
+            rate = (passed / total * 100) if total > 0 else 0
+            body += f"""
+                <tr>
+                    <td>{stage['name']}</td>
+                    <td style="text-align: center;">{total}</td>
+                    <td style="text-align: center; color: green;">{passed}</td>
+                    <td style="text-align: center; color: red;">{failed}</td>
+                    <td style="text-align: center;">{rate:.1f}%</td>
+                    <td><div style="width: 20px; height: 20px; background-color: {colors[i % len(colors)]}; border-radius: 4px; margin: 0 auto;"></div></td>
+                </tr>
+                """
+        
+        body += """
+            </table>
+            
+            <h2>各阶段时间详情</h2>
             <table>
                 <tr>
                     <th>序号</th>
@@ -388,16 +482,50 @@ def send_email_report(report_path, results=None):
                                     filename=os.path.basename(report_path))
                 msg.attach(attachment)
         
-        # 发送邮件
-        server = smtplib.SMTP_SSL(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
-        server.login(EMAIL_CONFIG["sender"], EMAIL_CONFIG["password"])
-        server.sendmail(EMAIL_CONFIG["sender"], EMAIL_CONFIG["recipient"], msg.as_string())
-        server.quit()
+        # 发送邮件（添加调试信息和重试机制）
+        max_retries = 3
+        retry_count = 0
         
-        print(f"✅ 邮件已发送至: {EMAIL_CONFIG['recipient']}")
-        return True
+        while retry_count < max_retries:
+            try:
+                print(f"  正在连接SMTP服务器: {EMAIL_CONFIG['smtp_server']}:{EMAIL_CONFIG['smtp_port']}")
+                server = smtplib.SMTP_SSL(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
+                server.set_debuglevel(1)  # 启用调试模式
+                
+                print(f"  正在登录: {EMAIL_CONFIG['sender']}")
+                server.login(EMAIL_CONFIG["sender"], EMAIL_CONFIG["password"])
+                
+                print(f"  正在发送邮件到: {EMAIL_CONFIG['recipient']}")
+                server.sendmail(EMAIL_CONFIG["sender"], EMAIL_CONFIG["recipient"], msg.as_string())
+                server.quit()
+                
+                print(f"✅ 邮件已成功发送至: {EMAIL_CONFIG['recipient']}")
+                return True
+            except smtplib.SMTPAuthenticationError as e:
+                print(f"❌ SMTP认证失败: {e}")
+                print(f"  请检查邮箱授权码是否正确")
+                return False
+            except smtplib.SMTPException as e:
+                retry_count += 1
+                print(f"⚠️ SMTP错误 (尝试 {retry_count}/{max_retries}): {e}")
+                if retry_count < max_retries:
+                    print("  等待2秒后重试...")
+                    time.sleep(2)
+                else:
+                    print(f"❌ 邮件发送失败，已达到最大重试次数")
+                    return False
+            except Exception as e:
+                print(f"❌ 邮件发送失败: {e}")
+                print(f"  错误类型: {type(e).__name__}")
+                import traceback
+                traceback.print_exc()
+                return False
+        
     except Exception as e:
         print(f"❌ 邮件发送失败: {e}")
+        print(f"  错误类型: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def generate_summary_report(results):
@@ -471,17 +599,51 @@ def main():
         
         if stage == "chaos":
             result = run_chaos_test()
+            # 从混沌测试输出中解析测试结果
+            passed = 0
+            failed = 0
+            if result["stdout"]:
+                # 解析混沌测试输出
+                if "成功请求" in result["stdout"]:
+                    import re
+                    success_match = re.search(r'成功请求:\s*(\d+)', result["stdout"])
+                    failed_match = re.search(r'失败请求:\s*(\d+)', result["stdout"])
+                    if success_match:
+                        passed = int(success_match.group(1))
+                    if failed_match:
+                        failed = int(failed_match.group(1))
+            
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            
+            results.append({
+                "name": TEST_STAGES[stage]["name"],
+                "stage": stage,
+                "success": result["success"],
+                "duration": f"{duration:.2f}s",
+                "returncode": result["returncode"],
+                "passed": passed,
+                "failed": failed,
+                "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S')
+            })
+            continue
         elif stage == "performance":
             # 性能测试跳过（需要JMeter）
             print(f"\n{'='*60}")
             print(f"  跳过: 性能测试（需要JMeter）")
             print(f"{'='*60}")
+            end_time = datetime.now()
             results.append({
                 "name": TEST_STAGES[stage]["name"],
                 "stage": stage,
                 "success": True,
                 "duration": "跳过",
-                "message": "性能测试需要JMeter环境，已跳过"
+                "passed": 0,
+                "failed": 0,
+                "message": "性能测试需要JMeter环境，已跳过",
+                "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S')
             })
             continue
         elif stage == "automation":
@@ -497,12 +659,29 @@ def main():
             end_time = datetime.now()
             duration = (end_time - start_time).total_seconds()
             
+            # 从自动化测试输出中解析测试结果
+            passed = 0
+            failed = 0
+            if result["stdout"]:
+                import re
+                # 解析自动化测试输出中的通过/失败数量
+                pass_match = re.search(r'通过:\s*(\d+)', result["stdout"])
+                fail_match = re.search(r'失败:\s*(\d+)', result["stdout"])
+                if pass_match:
+                    passed = int(pass_match.group(1))
+                if fail_match:
+                    failed = int(fail_match.group(1))
+            
             results.append({
                 "name": TEST_STAGES[stage]["name"],
                 "stage": stage,
                 "success": result["success"],
                 "duration": f"{duration:.2f}s",
-                "returncode": result["returncode"]
+                "returncode": result["returncode"],
+                "passed": passed,
+                "failed": failed,
+                "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S')
             })
             continue
         else:
@@ -518,7 +697,9 @@ def main():
             "duration": f"{duration:.2f}s",
             "returncode": result["returncode"],
             "passed": result.get("passed", 0),
-            "failed": result.get("failed", 0)
+            "failed": result.get("failed", 0),
+            "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
+            "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S')
         })
     
     # 生成汇总报告

@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-05-11T15:49:12.602091",
+  "total_stages": 1,
+  "passed_stages": 1,
+  "failed_stages": 0,
+  "stages": [
+    {
+      "name": "单元测试",
+      "stage": "unit",
+      "success": true,
+      "duration": "7.71s",
+      "returncode": 0,
+      "passed": 14,
+      "failed": 0,
+      "start_time": "2026-05-11 15:49:04",
+      "end_time": "2026-05-11 15:49:12"
+    }
+  ]
+}

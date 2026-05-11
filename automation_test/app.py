@@ -532,6 +532,14 @@ def main() -> None:
         page.wait_for_timeout(3000)
         browser.close()
         
+        # 计算统计结果并输出（用于统一测试执行器解析）
+        total = len(results)
+        passed = sum(1 for r in results if r["passed"])
+        failed = total - passed
+        
+        # 输出可被解析的统计信息（格式：通过: X, 失败: Y）
+        print(f"\n[RESULT] 通过: {passed}, 失败: {failed}")
+        
         generate_html_report(results)
 
 
