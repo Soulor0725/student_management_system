@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-05-11T10:49:02.947073",
+  "total_stages": 7,
+  "passed_stages": 7,
+  "failed_stages": 0,
+  "stages": [
+    {
+      "name": "单元测试",
+      "stage": "unit",
+      "success": true,
+      "duration": "9.82s",
+      "returncode": 0
+    },
+    {
+      "name": "API接口测试",
+      "stage": "api",
+      "success": true,
+      "duration": "86.61s",
+      "returncode": 0
+    },
+    {
+      "name": "集成测试",
+      "stage": "integration",
+      "success": true,
+      "duration": "10.60s",
+      "returncode": 0
+    },
+    {
+      "name": "安全测试",
+      "stage": "security",
+      "success": true,
+      "duration": "11.56s",
+      "returncode": 0
+    },
+    {
+      "name": "自动化测试",
+      "stage": "automation",
+      "success": true,
+      "duration": "0.23s",
+      "returncode": 0
+    },
+    {
+      "name": "性能测试",
+      "stage": "performance",
+      "success": true,
+      "duration": "跳过",
+      "message": "性能测试需要JMeter环境，已跳过"
+    },
+    {
+      "name": "混沌测试",
+      "stage": "chaos",
+      "success": true,
+      "duration": "14.62s",
+      "returncode": 0
+    }
+  ]
+}

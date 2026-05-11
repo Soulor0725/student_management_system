@@ -1,0 +1,226 @@
+{
+  "timestamp": "2026-05-11T10:44:20.620509",
+  "test_session": {
+    "start_time": "2026-05-11T10:42:55.244961",
+    "end_time": "2026-05-11T10:44:20.620422",
+    "total_duration": 85.375461
+  },
+  "total_tests": 20,
+  "passed": 20,
+  "failed": 0,
+  "skipped": 0,
+  "total_duration": 66.72099530000105,
+  "endpoint_stats": {
+    "POST /register": 4,
+    "POST /login": 5,
+    "POST /students": 5,
+    "GET /": 1,
+    "POST /students/<id>": 1,
+    "POST /students/<id>/delete": 1,
+    "GET /metrics": 1,
+    "GET /chaos/status": 1,
+    "POST /chaos/start, POST /chaos/stop": 1
+  },
+  "tests": [
+    {
+      "name": "用户注册成功",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /register",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:42:57.492846",
+      "duration": 2.061123800000132
+    },
+    {
+      "name": "用户名为空注册",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /register",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:42:59.542198",
+      "duration": 2.045344799999839
+    },
+    {
+      "name": "密码为空注册",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /register",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:01.593699",
+      "duration": 2.0442440999995597
+    },
+    {
+      "name": "重复注册",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /register",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:03.645104",
+      "duration": 2.0479064000001017
+    },
+    {
+      "name": "用户登录成功",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /login",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:05.684358",
+      "duration": 2.0364940999998
+    },
+    {
+      "name": "密码错误登录",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /login",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:07.729302",
+      "duration": 2.0420756000003166
+    },
+    {
+      "name": "用户不存在登录",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /login",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:09.768703",
+      "duration": 2.036793899999793
+    },
+    {
+      "name": "空凭证登录",
+      "class": "api_test/TestAuthAPI",
+      "endpoint": "POST /login",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:11.812419",
+      "duration": 2.040757499999927
+    },
+    {
+      "name": "添加学生成功",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:18.502512",
+      "duration": 4.656838400000197
+    },
+    {
+      "name": "学生姓名为空",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:25.229055",
+      "duration": 4.691051499999958
+    },
+    {
+      "name": "年龄为负数",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:32.017413",
+      "duration": 4.751460400000724
+    },
+    {
+      "name": "年龄为零",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:39.252272",
+      "duration": 5.143688199999815
+    },
+    {
+      "name": "班级为空",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:46.034761",
+      "duration": 4.7219769000003
+    },
+    {
+      "name": "查看学生列表",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "GET /",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:50.684449",
+      "duration": 2.601416900000004
+    },
+    {
+      "name": "编辑学生成功",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students/<id>",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:43:59.800672",
+      "duration": 7.08320570000069
+    },
+    {
+      "name": "删除学生成功",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /students/<id>/delete",
+      "scene": "正常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:44:06.359372",
+      "duration": 4.513424300000224
+    },
+    {
+      "name": "未登录访问",
+      "class": "api_test/TestStudentAPI",
+      "endpoint": "POST /login",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:44:12.480215",
+      "duration": 4.074943599999642
+    },
+    {
+      "name": "获取监控指标",
+      "class": "api_test/TestMetricsAPI",
+      "endpoint": "GET /metrics",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:44:14.528554",
+      "duration": 2.0451589999993303
+    },
+    {
+      "name": "获取混沌状态",
+      "class": "api_test/TestChaosAPI",
+      "endpoint": "GET /chaos/status",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:44:16.555856",
+      "duration": 2.02444640000067
+    },
+    {
+      "name": "启动停止混沌测试",
+      "class": "api_test/TestChaosAPI",
+      "endpoint": "POST /chaos/start, POST /chaos/stop",
+      "scene": "异常",
+      "status": "passed",
+      "start_time": "2026-05-11T10:42:55.244961",
+      "end_time": "2026-05-11T10:44:20.617716",
+      "duration": 4.058643800000027
+    }
+  ]
+}

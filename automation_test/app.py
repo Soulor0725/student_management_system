@@ -26,7 +26,7 @@ STUDENT_NAME = "浪子"
 STUDENT_AGE = "29"
 STUDENT_CLASS = "21131"
 STEP_WAIT_MS = 1200
-DB_FILE = Path(__file__).resolve().parent.parent / "student_management" / "data" / "student_management.db"
+DB_FILE = Path(__file__).resolve().parent.parent / "data" / "student_management.db"
 
 # 邮件配置
 EMAIL_CONFIG = {
@@ -62,8 +62,16 @@ def save_screenshot(page, case_name):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     screenshot_path = Path("output") / f"{case_name}_{timestamp}.png"
     Path("output").mkdir(parents=True, exist_ok=True)
-    page.screenshot(path=str(screenshot_path), full_page=True)
-    print(f"[截图已保存] {screenshot_path}")
+    try:
+        page.screenshot(path=str(screenshot_path), full_page=True, timeout=10000)
+        print(f"[截图已保存] {screenshot_path}")
+    except Exception as e:
+        print(f"[截图失败] {e}，尝试使用普通截图...")
+        try:
+            page.screenshot(path=str(screenshot_path), timeout=5000)
+            print(f"[截图已保存] {screenshot_path}")
+        except Exception as ex:
+            print(f"[截图失败] {ex}")
     return screenshot_path
 
 

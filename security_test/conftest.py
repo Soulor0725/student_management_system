@@ -2,23 +2,24 @@
 import pytest
 import sys
 import os
+import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import app, db
+from app import app
 
 @pytest.fixture(scope="module")
 def client():
     """创建测试客户端"""
     app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    
+    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        temp_db = f.name
     
     with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
         yield client
-        with app.app_context():
-            db.drop_all()
+    
+    os.unlink(temp_db)
 
 @pytest.fixture(scope="module")
 def test_user():

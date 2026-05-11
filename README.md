@@ -14,7 +14,7 @@
 
 ## 1. 版本说明
 
-**当前版本**: **v1.8.0**
+**当前版本**: **v1.9.0**
 
 详细版本历史和更新日志请查看：[VERSION.md](./VERSION.md)
 
@@ -22,6 +22,7 @@
 
 | 版本 | 日期 | 主要新增 |
 |------|------|---------|
+| v1.9.0 | 2026-05-11 | 统一测试执行器优化 |
 | v1.8.0 | 2026-05-10 | 安全测试模块 |
 | v1.7.0 | 2026-05-09 | 集成测试模块 |
 | v1.6.0 | 2026-05-08 | 功能测试用例文档 |
@@ -46,6 +47,7 @@
 | 8 | 功能测试 | ✅ |
 | 9 | 集成测试 | ✅ |
 | 10 | 安全测试 | ✅ |
+| 11 | 统一测试执行器 | ✅ |
 
 ---
 
@@ -66,9 +68,12 @@ student_management/
 ├─ unit_test/
 │  └─ test_app.py
 ├─ automation_test/
-│  ├─ conftest.py
-│  ├─ test_playwright.py
-│  └─ requirements.txt
+│  ├─ app.py
+│  ├─ cli.py
+│  ├─ README.md
+│  ├─ requirements.txt
+│  ├─ runtest.bat
+│  └─ output/
 ├─ performance_test_jmeter/
 │  ├─ add_student.jmx
 │  └─ delete_performanceTesting_data.py
@@ -93,6 +98,12 @@ student_management/
 ├─ security_test/
 │  ├─ conftest.py
 │  └─ test_security.py
+├─ test_executor/
+│  ├─ __init__.py
+│  ├─ config.py
+│  ├─ test_runner.py
+│  ├─ allure_report.py
+│  └─ reports/
 ├─ .github/
 │  └─ workflows/
 │     └─ ci.yml
@@ -613,7 +624,59 @@ python -m pytest security_test/ -v
 
 ---
 
-## 15. 后续建议
+## 15. 统一测试执行器
+
+项目包含统一测试执行器，支持一键执行所有测试并生成Allure风格的汇总报告。
+
+### 15.1 测试执行器文件
+
+| 文件 | 说明 |
+|------|------|
+| `test_executor/__init__.py` | 模块初始化 |
+| `test_executor/config.py` | 测试配置文件 |
+| `test_executor/test_runner.py` | 测试执行器主脚本 |
+| `test_executor/allure_report.py` | Allure报告生成器 |
+
+### 15.2 业界标准测试执行顺序
+
+```
+1. 单元测试 → 2. API接口测试 → 3. 集成测试 → 4. 安全测试 → 5. 自动化测试 → 6. 性能测试 → 7. 混沌测试
+```
+
+### 15.3 使用方式
+
+```bash
+# 一键执行所有测试并生成Allure报告
+cd student_management
+python test_executor/test_runner.py
+
+# 仅执行特定测试阶段
+python test_executor/test_runner.py --stage api
+
+# 指定多个阶段
+python test_executor/test_runner.py --stage unit --stage api --stage integration
+
+# 可用阶段：unit, api, integration, security, automation, performance, chaos
+```
+
+### 15.4 报告输出
+
+- **报告目录**：`test_executor/reports/allure-report/`
+- **查看方式**：`allure serve test_executor/reports/allure-report/`
+
+### 15.5 Allure报告特性
+
+| 特性 | 说明 |
+|------|------|
+| 📊 **测试仪表盘** | 总体通过率、失败率统计 |
+| 📈 **趋势图表** | 各阶段测试趋势分析 |
+| 🔍 **详细报告** | 每个测试用例的详细信息 |
+| 📋 **汇总表格** | 各阶段测试结果对比 |
+| 🎯 **缺陷追踪** | 失败用例汇总和分类 |
+
+---
+
+## 16. 后续建议
 
 - 增加密码复杂度校验
 - 增加 CSRF 防护

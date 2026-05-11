@@ -14,18 +14,29 @@ from app import app, init_db, hash_password, is_logged_in
 
 @pytest.fixture
 def client():
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        test_db = Path(tmp_dir) / "test.db"
+    import shutil
+    import time
+    
+    tmp_dir = tempfile.mkdtemp()
+    test_db = Path(tmp_dir) / "test.db"
 
-        original_db_file = app_module.DB_FILE
-        app_module.DB_FILE = test_db
+    original_db_file = app_module.DB_FILE
+    app_module.DB_FILE = test_db
 
+    try:
         with app.test_client() as client:
             with app.app_context():
                 init_db()
             yield client
-
+    finally:
         app_module.DB_FILE = original_db_file
+        # 等待片刻确保连接关闭
+        time.sleep(0.1)
+        # 尝试删除临时目录，忽略错误
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 @pytest.fixture

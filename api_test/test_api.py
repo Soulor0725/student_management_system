@@ -47,6 +47,7 @@ class TestAuthAPI:
 
     def test_register_success(self):
         """正常场景：用户注册成功"""
+        print(f"[API测试] 正在执行: POST /register - 用户注册成功")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/register", data={
             "username": TEST_USER["username"],
@@ -70,6 +71,7 @@ class TestAuthAPI:
 
     def test_register_empty_username(self):
         """异常场景：用户名为空"""
+        print(f"[API测试] 正在执行: POST /register - 用户名为空")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/register", data={
             "username": "",
@@ -93,6 +95,7 @@ class TestAuthAPI:
 
     def test_register_empty_password(self):
         """异常场景：密码为空"""
+        print(f"[API测试] 正在执行: POST /register - 密码为空")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/register", data={
             "username": "testuser",
@@ -116,6 +119,7 @@ class TestAuthAPI:
 
     def test_register_duplicate(self):
         """异常场景：重复注册"""
+        print(f"[API测试] 正在执行: POST /register - 重复注册")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/register", data={
             "username": TEST_USER["username"],
@@ -139,6 +143,7 @@ class TestAuthAPI:
 
     def test_login_success(self):
         """正常场景：用户登录成功"""
+        print(f"[API测试] 正在执行: POST /login - 用户登录成功")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/login", data={
             "username": TEST_USER["username"],
@@ -162,6 +167,7 @@ class TestAuthAPI:
 
     def test_login_wrong_password(self):
         """异常场景：密码错误"""
+        print(f"[API测试] 正在执行: POST /login - 密码错误")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/login", data={
             "username": TEST_USER["username"],
@@ -184,6 +190,7 @@ class TestAuthAPI:
 
     def test_login_nonexistent_user(self):
         """异常场景：用户不存在"""
+        print(f"[API测试] 正在执行: POST /login - 用户不存在")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/login", data={
             "username": "nonexistent",
@@ -206,6 +213,7 @@ class TestAuthAPI:
 
     def test_login_empty_credentials(self):
         """异常场景：空凭证"""
+        print(f"[API测试] 正在执行: POST /login - 空凭证")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/login", data={
             "username": "",
@@ -240,6 +248,7 @@ class TestStudentAPI:
 
     def test_add_student_success(self):
         """正常场景：添加学生成功"""
+        print(f"[API测试] 正在执行: POST /students - 添加学生成功")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/students", data={
             "name": TEST_STUDENT["name"],
@@ -263,6 +272,7 @@ class TestStudentAPI:
 
     def test_add_student_empty_name(self):
         """异常场景：学生姓名为空"""
+        print(f"[API测试] 正在执行: POST /students - 学生姓名为空")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/students", data={
             "name": "",
@@ -286,6 +296,7 @@ class TestStudentAPI:
 
     def test_add_student_invalid_age(self):
         """异常场景：年龄无效（负数）"""
+        print(f"[API测试] 正在执行: POST /students - 年龄为负数")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/students", data={
             "name": "Test",
@@ -309,6 +320,7 @@ class TestStudentAPI:
 
     def test_add_student_zero_age(self):
         """异常场景：年龄为0"""
+        print(f"[API测试] 正在执行: POST /students - 年龄为零")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/students", data={
             "name": "Test",
@@ -332,6 +344,7 @@ class TestStudentAPI:
 
     def test_add_student_empty_class(self):
         """异常场景：班级为空"""
+        print(f"[API测试] 正在执行: POST /students - 班级为空")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/students", data={
             "name": "Test",
@@ -355,6 +368,7 @@ class TestStudentAPI:
 
     def test_view_students(self):
         """正常场景：查看学生列表"""
+        print(f"[API测试] 正在执行: GET / - 查看学生列表")
         start_time = datetime.now()
         response = session.get(f"{BASE_URL}/")
         ENDPOINT_STATS["GET /"] = ENDPOINT_STATS.get("GET /", 0) + 1
@@ -375,6 +389,7 @@ class TestStudentAPI:
 
     def test_edit_student_success(self):
         """正常场景：编辑学生成功"""
+        print(f"[API测试] 正在执行: POST /students/<id> - 编辑学生成功")
         start_time = datetime.now()
         response = session.get(f"{BASE_URL}/")
         ENDPOINT_STATS["GET /"] = ENDPOINT_STATS.get("GET /", 0) + 1
@@ -401,6 +416,7 @@ class TestStudentAPI:
 
     def test_delete_student_success(self):
         """正常场景：删除学生成功"""
+        print(f"[API测试] 正在执行: POST /students/<id>/delete - 删除学生成功")
         start_time = datetime.now()
         response = session.post(f"{BASE_URL}/students/1/delete")
         ENDPOINT_STATS["POST /students/<id>/delete"] = ENDPOINT_STATS.get("POST /students/<id>/delete", 0) + 1
@@ -420,6 +436,7 @@ class TestStudentAPI:
 
     def test_access_without_login(self):
         """异常场景：未登录访问受保护页面"""
+        print(f"[API测试] 正在执行: GET / - 未登录访问")
         start_time = datetime.now()
         new_session = requests.Session()
         response = new_session.get(f"{BASE_URL}/")
@@ -444,6 +461,7 @@ class TestMetricsAPI:
 
     def test_metrics_endpoint(self):
         """正常场景：访问 metrics 端点"""
+        print(f"[API测试] 正在执行: GET /metrics - 获取监控指标")
         start_time = datetime.now()
         response = requests.get(f"{BASE_URL}/metrics")
         ENDPOINT_STATS["GET /metrics"] = ENDPOINT_STATS.get("GET /metrics", 0) + 1
@@ -468,6 +486,7 @@ class TestChaosAPI:
 
     def test_chaos_status(self):
         """正常场景：获取混沌测试状态"""
+        print(f"[API测试] 正在执行: GET /chaos/status - 获取混沌状态")
         start_time = datetime.now()
         response = requests.get(f"{BASE_URL}/chaos/status")
         ENDPOINT_STATS["GET /chaos/status"] = ENDPOINT_STATS.get("GET /chaos/status", 0) + 1
@@ -490,6 +509,7 @@ class TestChaosAPI:
 
     def test_chaos_start_stop(self):
         """正常场景：启动和停止混沌测试"""
+        print(f"[API测试] 正在执行: POST /chaos/start/stop - 启动停止混沌测试")
         start_time = datetime.now()
         response = requests.post(f"{BASE_URL}/chaos/start", json={"probability": 0.1})
         ENDPOINT_STATS["POST /chaos/start"] = ENDPOINT_STATS.get("POST /chaos/start", 0) + 1
