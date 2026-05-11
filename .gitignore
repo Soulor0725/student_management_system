@@ -24,3 +24,19 @@ logs
 
 # Email Configuration
 email_config.py
+
+# Test Reports - 忽略各模块测试报告
+api_test/reports/
+automation_test/output/
+test_executor/reports/
+test_executor/test_executor/reports/
+chaos_test/reports/
+functional_test/reports/
+integration_test/reports/
+security_test/reports/
+unit_test/reports/
+performance_test_jmeter/reports/
+
+# Allure Reports
+allure-results/
+allure-report/
