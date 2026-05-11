@@ -6,8 +6,27 @@ import subprocess
 import os
 import sys
 import json
+import time
+import smtplib
+import requests
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+from email.header import Header
 from datetime import datetime
 from config import TEST_STAGES, EXECUTION_ORDER, REPORTS_DIR, ALLURE_RESULTS_DIR, ALLURE_REPORT_DIR
+
+# 邮件配置
+EMAIL_CONFIG = {
+    "smtp_server": "smtp.qq.com",
+    "smtp_port": 465,
+    "sender": "249379218@qq.com",
+    "password": "afnimcejgiygbhij",
+    "recipient": "249379218@qq.com",
+    "subject": "学生管理系统测试报告"
+}
+
+FLASK_PROCESS = None
 
 def run_command(cmd, cwd=None, live_output=False):
     """执行命令并返回结果"""
@@ -91,6 +110,108 @@ def run_chaos_test():
     
     return result
 
+
+def start_flask_app():
+    """启动Flask应用"""
+    global FLASK_PROCESS
+    print("\n" + "="*60)
+    print("  正在启动 Flask 应用...")
+    print("="*60)
+    
+    cwd = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
+    # 使用subprocess.Popen启动Flask应用
+    if sys.platform == "win32":
+        FLASK_PROCESS = subprocess.Popen(
+            ["python", "app.py"],
+            cwd=cwd,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+        )
+    else:
+        FLASK_PROCESS = subprocess.Popen(
+            ["python", "app.py"],
+            cwd=cwd,
+            preexec_fn=os.setsid
+        )
+    
+    # 等待应用启动
+    print("等待应用启动 (5秒)...")
+    time.sleep(5)
+    
+    # 检查应用是否成功启动
+    try:
+        response = requests.get("http://localhost:5000/login", timeout=5)
+        if response.status_code == 200:
+            print("✅ Flask 应用启动成功！")
+            return True
+    except Exception as e:
+        print(f"⚠️ 应用启动检查失败: {e}")
+        print("继续执行测试...")
+    
+    return True
+
+
+def stop_flask_app():
+    """停止Flask应用"""
+    global FLASK_PROCESS
+    print("\n" + "="*60)
+    print("  正在停止 Flask 应用...")
+    print("="*60)
+    
+    if FLASK_PROCESS:
+        try:
+            if sys.platform == "win32":
+                FLASK_PROCESS.terminate()
+            else:
+                os.killpg(os.getpgid(FLASK_PROCESS.pid), 9)
+            print("✅ Flask 应用已停止")
+        except Exception as e:
+            print(f"⚠️ 停止应用时出错: {e}")
+    else:
+        print("⚠️ 没有找到运行的Flask进程")
+
+
+def send_email_report(report_path):
+    """发送测试报告邮件"""
+    print("\n" + "="*60)
+    print("  正在发送测试报告邮件...")
+    print("="*60)
+    
+    try:
+        # 创建邮件
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_CONFIG["sender"]
+        msg['To'] = EMAIL_CONFIG["recipient"]
+        msg['Subject'] = Header(EMAIL_CONFIG["subject"], 'utf-8')
+        
+        # 邮件正文
+        body = f"""
+        <h2>学生管理系统测试报告</h2>
+        <p>测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <p>详细报告请查看附件。</p>
+        """
+        msg.attach(MIMEText(body, 'html', 'utf-8'))
+        
+        # 添加附件
+        if os.path.exists(report_path):
+            with open(report_path, 'rb') as f:
+                attachment = MIMEApplication(f.read())
+                attachment.add_header('Content-Disposition', 'attachment', 
+                                    filename=os.path.basename(report_path))
+                msg.attach(attachment)
+        
+        # 发送邮件
+        server = smtplib.SMTP_SSL(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
+        server.login(EMAIL_CONFIG["sender"], EMAIL_CONFIG["password"])
+        server.sendmail(EMAIL_CONFIG["sender"], EMAIL_CONFIG["recipient"], msg.as_string())
+        server.quit()
+        
+        print(f"✅ 邮件已发送至: {EMAIL_CONFIG['recipient']}")
+        return True
+    except Exception as e:
+        print(f"❌ 邮件发送失败: {e}")
+        return False
+
 def generate_summary_report(results):
     """生成汇总报告"""
     report = {
@@ -134,6 +255,9 @@ def main():
     """主函数"""
     parser = argparse.ArgumentParser(description="统一测试执行器")
     parser.add_argument("--stage", action="append", help="指定测试阶段（可多次使用）")
+    parser.add_argument("--no-start-server", action="store_true", help="不自动启动Flask应用")
+    parser.add_argument("--no-stop-server", action="store_true", help="测试完成后不停止Flask应用")
+    parser.add_argument("--no-email", action="store_true", help="不发送邮件报告")
     args = parser.parse_args()
     
     # 确定要执行的阶段
@@ -147,6 +271,10 @@ def main():
     print("="*60)
     print(f"执行阶段: {', '.join([TEST_STAGES[s]['name'] for s in stages_to_run])}")
     print("="*60)
+    
+    # 启动Flask应用
+    if not args.no_start_server:
+        start_flask_app()
     
     results = []
     
@@ -233,6 +361,17 @@ def main():
     print("="*70)
     print(f" 总计: {total_passed + total_failed} 个测试用例, 通过: {total_passed}, 失败: {total_failed}")
     print("="*70)
+    
+    # 生成报告路径
+    report_path = os.path.join(REPORTS_DIR, f"test_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
+    
+    # 停止Flask应用
+    if not args.no_stop_server:
+        stop_flask_app()
+    
+    # 发送邮件报告
+    if not args.no_email:
+        send_email_report(report_path)
 
 if __name__ == "__main__":
     main()

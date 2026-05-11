@@ -646,7 +646,7 @@ python -m pytest security_test/ -v
 ### 15.3 使用方式
 
 ```bash
-# 一键执行所有测试并生成Allure报告
+# 一键执行所有测试（自动启动应用、执行测试、停止应用、发送邮件报告）
 cd student_management
 python test_executor/test_runner.py
 
@@ -657,12 +657,19 @@ python test_executor/test_runner.py --stage api
 python test_executor/test_runner.py --stage unit --stage api --stage integration
 
 # 可用阶段：unit, api, integration, security, automation, performance, chaos
+
+# 高级选项
+python test_executor/test_runner.py --no-start-server    # 不自动启动Flask应用
+python test_executor/test_runner.py --no-stop-server     # 测试完成后不停止Flask应用
+python test_executor/test_runner.py --no-email           # 不发送邮件报告
 ```
 
 ### 15.4 报告输出
 
-- **报告目录**：`test_executor/reports/allure-report/`
-- **查看方式**：`allure serve test_executor/reports/allure-report/`
+- **报告目录**：`test_executor/reports/`
+- **报告格式**：JSON + Markdown
+- **邮件通知**：自动发送测试报告到 249379218@qq.com
+- **查看方式**：直接打开 Markdown 文件或使用浏览器查看
 
 ### 15.5 Allure报告特性
 
