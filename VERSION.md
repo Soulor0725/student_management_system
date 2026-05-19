@@ -2,11 +2,46 @@
 
 ## 当前版本
 
-**v1.9.1**
+**v1.10.0**
 
 ---
 
 ## 版本历史
+
+### v1.10.0 (2026-05-20)
+
+**优化模块：**
+- ✅ Prometheus监控指标优化 (`app.py`)
+  - 为`flask_http_request_total`添加`status`标签，支持按状态码统计
+  - 为`flask_http_request_duration_seconds`添加`status`标签
+  - 新增系统状态指标：`app_up`、`total_users`、`total_students`
+  - 指标每10秒自动更新，即使无请求也持续显示数据
+  - 修复Grafana中"成功请求数(200)"显示N/A的问题
+
+**优化模块：**
+- ✅ 统一测试执行器增强 (`test_executor/test_runner.py`)
+  - 端口检测从HTTP请求改为socket连接（更可靠、更快）
+  - 修复进程清理逻辑，使用set避免重复PID处理
+  - 添加PID有效性检查（必须为数字且大于0）
+  - 优化命令执行方式，使用shell模式处理管道命令
+  - 避免误杀PID为0的系统进程
+
+---
+
+### v1.9.2 (2026-05-18)
+**新增模块：**
+- ✅ Locust性能测试模块 (`performance_test_locust/`)
+  - 纯Python性能测试方案
+  - 支持Web UI模式和无UI模式
+  - 与pytest生态集成更好
+  - 支持CI/CD集成
+  - 生成CSV格式测试报告
+
+**优化模块：**
+- ✅ 统一测试执行器增强 (`test_executor/`)
+  - 集成Locust性能测试，自动检测Locust环境
+  - 解析性能测试结果（请求数、失败数、响应时间、RPS）
+  - 支持通过--stage performance单独运行性能测试
 
 ### v1.9.1 (2026-05-11)
 **优化模块：**
@@ -118,7 +153,7 @@
 | 1 | 核心应用 | `app.py` | ✅ | v1.0.0 |
 | 2 | 单元测试 | `unit_test/` | ✅ | v1.0.0 |
 | 3 | 自动化测试 | `automation_test/` | ✅ | v1.1.0 |
-| 4 | 性能测试 | `performance_test_jmeter/` | ✅ | v1.2.0 |
+| 4 | JMeter性能测试 | `performance_test_jmeter/` | ✅ | v1.2.0 |
 | 5 | 监控模块 | `monitoring/` | ✅ | v1.3.0 |
 | 6 | 混沌测试 | `chaos_test/` | ✅ | v1.4.0 |
 | 7 | API测试 | `api_test/` | ✅ | v1.5.0 |
@@ -126,3 +161,5 @@
 | 9 | 集成测试 | `integration_test/` | ✅ | v1.7.0 |
 | 10 | 安全测试 | `security_test/` | ✅ | v1.8.0 |
 | 11 | 统一测试执行器 | `test_executor/` | ✅ | v1.9.0 |
+| 12 | Locust性能测试 | `performance_test_locust/` | ✅ | v1.9.2 |
+| 13 | 监控指标优化 | `app.py` | ✅ | v1.10.0 |

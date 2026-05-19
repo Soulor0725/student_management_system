@@ -1,10 +1,10 @@
 import hashlib
 import sqlite3
+import time
 from pathlib import Path
 
 from flask import Flask, redirect, render_template, request, session, url_for
-from prometheus_flask_exporter import PrometheusMetrics
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 
 app = Flask(__name__)
@@ -59,16 +59,41 @@ def chaos_before_request():
             print(f"[CHAOS] 注入错误: {error['code']} - {error['message']}")
             abort(error['code'], description=error['message'])
 
-# Prometheus 监控指标 - 兼容官方 Grafana 模板
-metrics = PrometheusMetrics(app)
+# Prometheus 监控指标 - 使用原生 prometheus_client
+# 自定义请求计数器（按 path 和 status 统计）
+REQUEST_COUNT = Counter('flask_http_request_total', 'Total HTTP requests', ['path', 'status'])
+REQUEST_LATENCY = Histogram('flask_http_request_duration_seconds', 'HTTP request duration', ['path', 'status'])
 
-# 通用指标（兼容官方模板）
-REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['endpoint', 'method', 'status'])
-REQUEST_LATENCY = Histogram('http_request_duration_seconds', 'HTTP request duration', ['endpoint', 'method'])
+# 业务专用指标
+REGISTER_REQUESTS = Counter('register_requests_total', 'Total register requests', ['status'])
+LOGIN_REQUESTS = Counter('login_requests_total', 'Total login requests', ['status'])
+ADD_STUDENT_REQUESTS = Counter('add_student_requests_total', 'Total add student requests', ['status'])
 
-# 应用特定指标
-APP_REQUEST_COUNT = Counter('app_requests_total', 'Total app requests', ['endpoint', 'method', 'status'])
-APP_REQUEST_LATENCY = Histogram('app_request_latency_seconds', 'App request latency', ['endpoint'])
+# 正在处理的请求数
+IN_FLIGHT_REQUESTS = Gauge('in_flight_requests', 'Number of in-flight requests', ['path'])
+
+# 系统状态指标（持续显示，即使没有请求也有数据）
+APP_UP = Gauge('app_up', 'Application is up', [])
+TOTAL_USERS = Gauge('total_users', 'Total number of registered users', [])
+TOTAL_STUDENTS = Gauge('total_students', 'Total number of students', [])
+
+# 全局监控中间件
+@app.before_request
+def before_request_monitor():
+    request.start_time = time.time()
+    IN_FLIGHT_REQUESTS.labels(path=request.path).inc()
+
+@app.after_request
+def after_request_monitor(response):
+    if hasattr(request, 'start_time'):
+        duration = time.time() - request.start_time
+        path = request.path
+        status = str(response.status_code)
+        
+        REQUEST_COUNT.labels(path=path, status=status).inc()
+        REQUEST_LATENCY.labels(path=path, status=status).observe(duration)
+        IN_FLIGHT_REQUESTS.labels(path=request.path).dec()
+    return response
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -127,6 +152,7 @@ def register_submit():
     print(f"[SERVER DEBUG] 收到注册请求: username={username}, password={password}")
 
     if not username or not password:
+        REGISTER_REQUESTS.labels(status="fail").inc()
         return render_template(
             "auth.html",
             mode="register",
@@ -143,6 +169,7 @@ def register_submit():
     print(f"[SERVER DEBUG] 用户 {username} 是否存在: {exists}")
     
     if exists:
+        REGISTER_REQUESTS.labels(status="fail").inc()
         print(f"[SERVER DEBUG] 用户 {username} 已存在，返回错误")
         return render_template(
             "auth.html",
@@ -161,6 +188,7 @@ def register_submit():
         conn.commit()
     print(f"[SERVER DEBUG] 用户 {username} 插入成功")
     
+    REGISTER_REQUESTS.labels(status="success").inc()
     return render_template(
         "auth.html",
         mode="register",
@@ -189,6 +217,7 @@ def login_submit():
         ).fetchone()
 
     if not user or user["password"] != hash_password(password):
+        LOGIN_REQUESTS.labels(status="fail").inc()
         return render_template(
             "auth.html",
             mode="login",
@@ -198,6 +227,7 @@ def login_submit():
         )
 
     session["user"] = {"id": user["id"], "username": user["username"]}
+    LOGIN_REQUESTS.labels(status="success").inc()
     return render_template(
         "auth.html",
         mode="login",
@@ -233,12 +263,17 @@ def add_student():
     age = int(request.form.get("age", 0) or 0)
     class_name = request.form.get("class_name", "").strip()
 
-    with get_db_connection() as conn:
-        conn.execute(
-            "INSERT INTO students (name, age, class_name) VALUES (?, ?, ?)",
-            (name, age, class_name),
-        )
-        conn.commit()
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO students (name, age, class_name) VALUES (?, ?, ?)",
+                (name, age, class_name),
+            )
+            conn.commit()
+        ADD_STUDENT_REQUESTS.labels(status="success").inc()
+    except Exception as e:
+        ADD_STUDENT_REQUESTS.labels(status="fail").inc()
+        raise e
     return redirect(url_for("index"))
 
 
@@ -292,6 +327,37 @@ def metrics():
     return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 
+def update_system_metrics():
+    """定期更新系统状态指标"""
+    import threading
+    import time
+    
+    def update_loop():
+        while True:
+            try:
+                # 更新应用状态
+                APP_UP.set(1)
+                
+                # 更新用户数量
+                with get_db_connection() as conn:
+                    user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+                    TOTAL_USERS.set(user_count)
+                    
+                    student_count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
+                    TOTAL_STUDENTS.set(student_count)
+            except Exception as e:
+                print(f"[METRICS] 更新指标失败: {e}")
+            
+            time.sleep(10)  # 每10秒更新一次
+    
+    # 启动后台线程
+    thread = threading.Thread(target=update_loop, daemon=True)
+    thread.start()
+
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    
+    # 启动指标更新线程
+    update_system_metrics()
+    
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

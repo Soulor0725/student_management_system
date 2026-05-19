@@ -127,11 +127,9 @@ def run_chaos_test():
 
 def is_port_in_use(port):
     """检查指定端口是否被占用"""
-    try:
-        with requests.get(f"http://localhost:{port}/login", timeout=2):
-            return True
-    except requests.exceptions.RequestException:
-        return False
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
 
 
 def kill_process_on_port(port):
@@ -141,28 +139,28 @@ def kill_process_on_port(port):
     if sys.platform == "win32":
         # Windows系统使用netstat和taskkill
         try:
-            # 获取占用端口的进程ID
-            result = subprocess.run(
-                ["netstat", "-ano", "|", "findstr", f":{port}"],
-                capture_output=True,
-                text=True,
-                shell=True
-            )
+            # 获取占用端口的进程ID - 使用shell命令
+            cmd = f"netstat -ano | findstr :{port}"
+            result = subprocess.run(cmd, capture_output=True, text=True, shell=True)
             if result.stdout:
                 # 解析进程ID
                 lines = result.stdout.strip().split('\n')
+                pids = set()  # 使用集合避免重复PID
                 for line in lines:
                     parts = line.split()
                     if len(parts) >= 5:
                         pid = parts[-1]
+                        if pid.isdigit() and int(pid) > 0:
+                            pids.add(pid)
+                
+                if pids:
+                    for pid in pids:
                         print(f"    找到进程 PID: {pid}")
-                        # 杀掉进程
-                        subprocess.run(
-                            ["taskkill", "/F", "/PID", pid],
-                            capture_output=True
-                        )
+                        subprocess.run(f"taskkill /F /PID {pid}", capture_output=True, shell=True)
                         print(f"    已杀掉进程 PID: {pid}")
                         time.sleep(1)
+                else:
+                    print("    未找到占用该端口的进程")
         except Exception as e:
             print(f"    查找进程失败: {e}")
     else:
@@ -271,10 +269,13 @@ def send_email_report(report_path, results=None):
     
     try:
         # 创建邮件
-        msg = MIMEMultipart()
+        msg = MIMEMultipart('mixed')
+        # QQ邮箱要求From头使用纯邮箱地址，不能编码
         msg['From'] = EMAIL_CONFIG["sender"]
         msg['To'] = EMAIL_CONFIG["recipient"]
         msg['Subject'] = Header(EMAIL_CONFIG["subject"], 'utf-8')
+        msg['Accept-Language'] = 'zh-CN'
+        msg['Accept-Charset'] = 'UTF-8'
         
         # 计算统计数据
         if results:
@@ -343,8 +344,8 @@ def send_email_report(report_path, results=None):
                 body {{ font-family: Arial, sans-serif; margin: 20px; }}
                 h1 {{ color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }}
                 h2 {{ color: #666; margin-top: 20px; }}
-                table {{ border-collapse: collapse; width: 100%; margin-top: 10px; }}
-                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                table {{ border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 14px; }}
+                th, td {{ border: 1px solid #ddd; padding: 6px 10px; text-align: left; white-space: nowrap; }}
                 th {{ background-color: #f2f2f2; }}
                 .passed {{ color: green; font-weight: bold; }}
                 .failed {{ color: red; font-weight: bold; }}
@@ -427,44 +428,73 @@ def send_email_report(report_path, results=None):
                     <td><div style="width: 20px; height: 20px; background-color: {colors[i % len(colors)]}; border-radius: 4px; margin: 0 auto;"></div></td>
                 </tr>
                 """
-        
-        body += """
-            </table>
             
+        body += """
             <h2>各阶段时间详情</h2>
-            <table>
+            <table style="width: 100%; border-collapse: collapse;">
                 <tr>
-                    <th>序号</th>
-                    <th>阶段名称</th>
-                    <th>开始时间</th>
-                    <th>结束时间</th>
-                    <th>耗时</th>
-                    <th>通过</th>
-                    <th>失败</th>
-                    <th>状态</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">序号</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">阶段名称</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">开始时间</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">结束时间</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">耗时</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">通过</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">失败</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">状态</th>
                 </tr>
         """
         
         if results:
             for i, stage in enumerate(results, 1):
-                status = "✅ 通过" if stage.get('success', False) else "❌ 失败"
-                status_class = "passed" if stage.get('success', False) else "failed"
+                status = "通过" if stage.get('success', False) else "失败"
+                status_color = "#4CAF50" if stage.get('success', False) else "#f44336"
                 body += f"""
                 <tr>
-                    <td>{i}</td>
-                    <td>{stage.get('name', 'N/A')}</td>
-                    <td>{stage.get('start_time', 'N/A')}</td>
-                    <td>{stage.get('end_time', 'N/A')}</td>
-                    <td>{stage.get('duration', 'N/A')}</td>
-                    <td>{stage.get('passed', 0)}</td>
-                    <td>{stage.get('failed', 0)}</td>
-                    <td class="{status_class}">{status}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{i}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{stage.get('name', 'N/A')}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{stage.get('start_time', 'N/A')}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{stage.get('end_time', 'N/A')}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{stage.get('duration', 'N/A')}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{stage.get('passed', 0)}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{stage.get('failed', 0)}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: {status_color}; font-weight: bold;">{status}</td>
                 </tr>
                 """
         
         body += """
             </table>
-            
+        """
+        
+        # 添加性能测试专用指标
+        perf_result = next((r for r in results if r.get('stage') == 'performance'), None)
+        if perf_result and perf_result.get('avg_response_time'):
+            body += f"""
+            <h2>性能测试指标</h2>
+            <table>
+                <tr>
+                    <th>指标</th>
+                    <th>数值</th>
+                </tr>
+                <tr>
+                    <td>平均响应时间</td>
+                    <td>{perf_result.get('avg_response_time', 0):.2f} ms</td>
+                </tr>
+                <tr>
+                    <td>请求速率 (RPS)</td>
+                    <td>{perf_result.get('rps', 0):.2f}</td>
+                </tr>
+                <tr>
+                    <td>总请求数</td>
+                    <td>{perf_result.get('passed', 0) + perf_result.get('failed', 0)}</td>
+                </tr>
+                <tr>
+                    <td>失败请求数</td>
+                    <td>{perf_result.get('failed', 0)}</td>
+                </tr>
+            </table>
+            """
+        
+        body += """
             <p style="margin-top: 20px; color: #666; font-size: 12px;">
                 详细报告请查看附件。
             </p>
@@ -472,14 +502,36 @@ def send_email_report(report_path, results=None):
         </html>
         """
         
-        msg.attach(MIMEText(body, 'html', 'utf-8'))
+        # 创建纯文本版本的正文作为备选
+        text_body = f"""学生管理系统测试报告
+
+测试开始时间: {test_start_time}
+测试结束时间: {test_end_time}
+
+测试统计:
+- 总用例数: {total_tests}
+- 通过: {total_passed}
+- 失败: {total_failed}
+- 通过率: {pass_rate:.1f}%
+
+各阶段测试详情请查看附件。
+"""
         
-        # 添加附件
+        # 添加纯文本正文
+        msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
+        # 添加HTML正文
+        msg.attach(MIMEText(body, 'html', 'utf-8'))
+        msg.preamble = 'This is a multi-part message in MIME format.'
+        
+        # 添加附件（修复中文文件名乱码问题）
         if os.path.exists(report_path):
             with open(report_path, 'rb') as f:
                 attachment = MIMEApplication(f.read())
+                filename = os.path.basename(report_path)
+                # 使用RFC 2047编码处理中文文件名
+                encoded_filename = Header(filename, 'utf-8').encode()
                 attachment.add_header('Content-Disposition', 'attachment', 
-                                    filename=os.path.basename(report_path))
+                                    filename=encoded_filename)
                 msg.attach(attachment)
         
         # 发送邮件（添加调试信息和重试机制）
@@ -538,14 +590,19 @@ def generate_summary_report(results):
         "stages": results
     }
     
+    # 获取当前脚本所在目录的绝对路径
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    reports_dir = os.path.join(os.path.dirname(current_dir), REPORTS_DIR)
+    os.makedirs(reports_dir, exist_ok=True)
+    
     # 保存JSON报告
-    os.makedirs(REPORTS_DIR, exist_ok=True)
-    report_path = os.path.join(REPORTS_DIR, f"test_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-    with open(report_path, "w", encoding="utf-8") as f:
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    json_report_path = os.path.join(reports_dir, f"test_summary_{timestamp}.json")
+    with open(json_report_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     
     # 生成Markdown报告
-    md_report_path = os.path.join(REPORTS_DIR, f"test_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
+    md_report_path = os.path.join(reports_dir, f"test_summary_{timestamp}.md")
     with open(md_report_path, "w", encoding="utf-8") as f:
         f.write("# 统一测试执行报告\n\n")
         f.write(f"**生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
@@ -558,11 +615,22 @@ def generate_summary_report(results):
         f.write(f"| 通过率 | {report['passed_stages']/report['total_stages']*100:.2f}% |\n\n")
         
         f.write("## 各阶段测试结果\n\n")
-        f.write(f"| 序号 | 阶段名称 | 状态 | 耗时 |\n")
-        f.write(f"|------|---------|------|------|\n")
+        f.write(f"| 序号 | 阶段名称 | 状态 | 耗时 | 通过 | 失败 |\n")
+        f.write(f"|------|---------|------|------|------|------|\n")
         for i, stage in enumerate(results, 1):
             status = "✅ 通过" if stage["success"] else "❌ 失败"
-            f.write(f"| {i} | {stage['name']} | {status} | {stage.get('duration', 'N/A')} |\n")
+            f.write(f"| {i} | {stage['name']} | {status} | {stage.get('duration', 'N/A')} | {stage.get('passed', 0)} | {stage.get('failed', 0)} |\n")
+    
+        # 添加性能测试专用指标
+        perf_result = next((r for r in results if r.get('stage') == 'performance'), None)
+        if perf_result and perf_result.get('avg_response_time'):
+            f.write("\n## 性能测试指标\n\n")
+            f.write(f"| 指标 | 数值 |\n")
+            f.write(f"|------|------|\n")
+            f.write(f"| 平均响应时间 | {perf_result.get('avg_response_time', 0):.2f} ms |\n")
+            f.write(f"| 请求速率 (RPS) | {perf_result.get('rps', 0):.2f} |\n")
+            f.write(f"| 总请求数 | {perf_result.get('passed', 0) + perf_result.get('failed', 0)} |\n")
+            f.write(f"| 失败请求数 | {perf_result.get('failed', 0)} |\n")
     
     print(f"\n📊 汇总报告已生成: {md_report_path}")
     return md_report_path
@@ -629,19 +697,95 @@ def main():
             })
             continue
         elif stage == "performance":
-            # 性能测试跳过（需要JMeter）
+            # 使用 Locust 运行性能测试
             print(f"\n{'='*60}")
-            print(f"  跳过: 性能测试（需要JMeter）")
+            print(f"  正在执行: 性能测试 (Locust)")
             print(f"{'='*60}")
+            
+            cwd = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "performance_test_locust")
+            # 检查 Locust 是否可用
+            check_result = run_command("locust --version", cwd=cwd)
+            if not check_result["success"]:
+                print("  ⚠️ Locust 未安装，跳过性能测试")
+                end_time = datetime.now()
+                results.append({
+                    "name": TEST_STAGES[stage]["name"],
+                    "stage": stage,
+                    "success": True,
+                    "duration": "跳过",
+                    "passed": 0,
+                    "failed": 0,
+                    "message": "Locust 未安装，请运行 pip install locust",
+                    "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S')
+                })
+                continue
+            
+            # 运行 Locust 性能测试（无UI模式）
+            cmd = "locust -f locustfile.py --host=http://localhost:5000 --headless -u 20 -r 2 -t 60s --csv=test_results"
+            result = run_command(cmd, cwd=cwd, live_output=True)
+            
             end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            
+            # 解析性能测试结果
+            passed = 0
+            failed = 0
+            avg_response_time = 0
+            rps = 0
+            error_message = None
+            
+            # 优先从CSV报告中读取更详细的数据
+            stats_file = os.path.join(cwd, "test_results_stats.csv")
+            if os.path.exists(stats_file):
+                with open(stats_file, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                    if len(lines) > 1:
+                        # 查找汇总行（Aggregated）
+                        for line in lines:
+                            if ',Aggregated,' in line:
+                                parts = line.strip().split(',')
+                                if len(parts) >= 10:
+                                    total_requests = int(parts[2])
+                                    failure_count = int(parts[3])
+                                    passed = total_requests - failure_count
+                                    failed = failure_count
+                                    avg_response_time = float(parts[5])
+                                    rps = float(parts[9])
+                                    break
+            
+            # 如果CSV文件不存在或没有读取到数据，从命令输出中解析
+            if passed == 0 and failed == 0:
+                if result["stdout"]:
+                    import re
+                    request_match = re.search(r'Requests/s:\s*([\d.]+)', result["stdout"])
+                    fail_match = re.search(r'Failures:\s*(\d+)', result["stdout"])
+                    avg_time_match = re.search(r'Avg:\s*([\d.]+)', result["stdout"])
+                    
+                    if request_match:
+                        rps = float(request_match.group(1))
+                    if fail_match:
+                        failed = int(fail_match.group(1))
+                    if avg_time_match:
+                        avg_response_time = float(avg_time_match.group(1))
+            
+            # 如果命令执行失败且没有统计数据，标记为失败
+            if not result["success"] and passed == 0 and failed == 0:
+                error_message = result["stderr"] or result["stdout"]
+                # 性能测试执行失败，标记为1个失败
+                failed = 1
+            
             results.append({
                 "name": TEST_STAGES[stage]["name"],
                 "stage": stage,
-                "success": True,
-                "duration": "跳过",
-                "passed": 0,
-                "failed": 0,
-                "message": "性能测试需要JMeter环境，已跳过",
+                "success": result["success"],
+                "duration": f"{duration:.2f}s",
+                "returncode": result["returncode"],
+                "passed": passed,
+                "failed": failed,
+                "avg_response_time": avg_response_time,
+                "rps": rps,
+                "error_message": error_message,
                 "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
                 "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S')
             })
@@ -732,7 +876,9 @@ def main():
     print("="*70)
     
     # 生成报告路径
-    report_path = os.path.join(REPORTS_DIR, f"test_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    reports_dir = os.path.join(os.path.dirname(current_dir), REPORTS_DIR)
+    report_path = os.path.join(reports_dir, f"test_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
     
     # 停止Flask应用
     if not args.no_stop_server:

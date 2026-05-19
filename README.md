@@ -14,7 +14,7 @@
 
 ## 1. 版本说明
 
-**当前版本**: **v1.9.1**
+**当前版本**: **v1.10.0**
 
 详细版本历史和更新日志请查看：[VERSION.md](./VERSION.md)
 
@@ -22,6 +22,9 @@
 
 | 版本 | 日期 | 主要新增 |
 |------|------|---------|
+| v1.10.0 | 2026-05-20 | 监控指标优化+统一执行器增强 |
+| v1.9.2 | 2026-05-18 | Locust性能测试模块 |
+| v1.9.1 | 2026-05-11 | 统一测试执行器增强 |
 | v1.9.0 | 2026-05-11 | 统一测试执行器优化 |
 | v1.8.0 | 2026-05-10 | 安全测试模块 |
 | v1.7.0 | 2026-05-09 | 集成测试模块 |
@@ -29,7 +32,7 @@
 | v1.5.0 | 2026-05-07 | API接口测试模块 |
 | v1.4.0 | 2026-05-06 | 混沌测试模块 |
 | v1.3.0 | 2026-05-05 | 监控模块(Prometheus+Grafana) |
-| v1.2.0 | 2026-05-04 | 性能测试模块 |
+| v1.2.0 | 2026-05-04 | JMeter性能测试模块 |
 | v1.1.0 | 2026-05-03 | 自动化测试模块 |
 | v1.0.0 | 2026-05-02 | 初始版本 |
 
@@ -40,14 +43,15 @@
 | 1 | 核心应用 | ✅ |
 | 2 | 单元测试 | ✅ |
 | 3 | 自动化测试 | ✅ |
-| 4 | 性能测试 | ✅ |
-| 5 | 监控模块 | ✅ |
-| 6 | 混沌测试 | ✅ |
-| 7 | API测试 | ✅ |
-| 8 | 功能测试 | ✅ |
-| 9 | 集成测试 | ✅ |
-| 10 | 安全测试 | ✅ |
-| 11 | 统一测试执行器 | ✅ |
+| 4 | JMeter性能测试 | ✅ |
+| 5 | Locust性能测试 | ✅ |
+| 6 | 监控模块 | ✅ |
+| 7 | 混沌测试 | ✅ |
+| 8 | API测试 | ✅ |
+| 9 | 功能测试 | ✅ |
+| 10 | 集成测试 | ✅ |
+| 11 | 安全测试 | ✅ |
+| 12 | 统一测试执行器 | ✅ |
 
 ---
 
@@ -77,6 +81,9 @@ student_management/
 ├─ performance_test_jmeter/
 │  ├─ add_student.jmx
 │  └─ delete_performanceTesting_data.py
+├─ performance_test_locust/
+│  ├─ locustfile.py
+│  └─ README.md
 ├─ chaos_test/
 │  ├─ chaos_injector.py
 │  ├─ chaos_api.py
@@ -264,7 +271,55 @@ python cli.py
 2. 配置目标服务器地址
 3. 运行压测
 
-#### 6.2.2 性能测试数据清理
+#### 6.2.2 Locust 性能测试
+
+项目同时支持 Locust 性能测试，提供纯 Python 的性能测试方案：
+
+**文件结构**：
+- `performance_test_locust/locustfile.py` - 性能测试脚本
+- `performance_test_locust/README.md` - 使用说明
+
+**功能说明**：
+- 纯 Python 实现，易于扩展和维护
+- 支持 Web UI 模式和无UI模式
+- 与 pytest 生态集成更好
+- 支持 CI/CD 集成
+- 生成 CSV 格式测试报告
+
+**安装依赖**：
+```bash
+pip install locust
+```
+
+**使用方式**：
+
+1. **Web UI 模式**（推荐）：
+```bash
+cd performance_test_locust
+locust -f locustfile.py --host=http://localhost:5000
+# 打开浏览器访问: http://localhost:8089
+```
+
+2. **无UI模式**（CI/CD集成）：
+```bash
+cd performance_test_locust
+locust -f locustfile.py --host=http://localhost:5000 --headless -u 100 -r 10 -t 5m --csv=results
+```
+
+**测试场景**：
+| 任务 | 权重 | 说明 |
+|------|------|------|
+| 查看学生列表 | 3 | 访问首页获取学生列表 |
+| 添加学生 | 2 | POST请求添加新学生 |
+| 查看监控指标 | 1 | 访问 /metrics 端点 |
+| 查看混沌状态 | 1 | 访问 /chaos/status 端点 |
+
+**通过统一测试执行器运行**：
+```bash
+python test_executor/test_runner.py --stage performance
+```
+
+#### 6.2.3 性能测试数据清理
 
 压测后会产生大量测试数据，可使用脚本快速清理：
 
@@ -328,10 +383,49 @@ python -m pytest unit_test/test_app.py -v
 - 抓取间隔：5秒
 
 **Flask 应用指标**：
-- `flask_http_request_total` - 请求总数（含 path, method, status 标签）
-- `flask_http_request_duration_seconds` - 请求耗时（直方图）
+- `flask_http_request_total` - 请求总数（含 path, status 标签）
+- `flask_http_request_duration_seconds` - 请求耗时（直方图，含 path, status 标签）
+- `app_up` - 应用运行状态（1=运行中，持续更新）
+- `total_users` - 注册用户总数（持续更新）
+- `total_students` - 学生总数（持续更新）
+- `register_requests_total` - 注册请求统计（含 status 标签）
+- `login_requests_total` - 登录请求统计（含 status 标签）
+- `add_student_requests_total` - 添加学生请求统计（含 status 标签）
+- `in_flight_requests` - 正在处理的请求数（含 path 标签）
 
-### 9.2 启动监控
+### 9.2 监控原理
+
+**数据采集流程**：
+1. Prometheus每5秒从`/metrics`抓取一次数据
+2. 数据永久存储在Prometheus（默认15天）
+3. Grafana通过PromQL查询历史数据并可视化
+
+**重要查询示例**：
+```promql
+# 总请求数（历史数据一直显示）
+sum(flask_http_request_total)
+
+# 成功请求数(200)
+sum(flask_http_request_total{status="200"})
+
+# 用户总数（持续显示）
+total_users
+
+# 学生总数（持续显示）
+total_students
+
+# 请求速率
+rate(flask_http_request_total[5m])
+```
+
+### 9.4 查看历史数据
+
+在Grafana中：
+1. 点击右上角时间范围选择器
+2. 选择"过去1小时"、"过去6小时"或自定义时间范围
+3. 即使没有新请求，历史数据依然会完整显示
+
+### 9.5 启动监控
 
 **启动 Prometheus**：
 ```bash
@@ -344,13 +438,13 @@ prometheus.exe --config.file=prometheus.yml
 grafana-server.exe start
 ```
 
-### 9.3 导入仪表盘
+### 9.6 导入仪表盘
 
 1. 打开 Grafana：`http://localhost:3000`
 2. 配置 Prometheus 数据源
 3. 导入仪表盘文件：`monitoring/student-management-dashboard.json`
 
-### 9.4 仪表盘面板
+### 9.7 仪表盘面板
 
 | 面板 | 说明 |
 |------|------|
@@ -676,7 +770,7 @@ python test_executor/test_runner.py --no-email           # 不发送邮件报告
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  检测端口5000是否被占用                                      │
+│  使用socket检测端口5000是否被占用（更可靠）                  │
 └─────────────────────────────────────────────────────────────┘
                               │
               ┌───────────────┴───────────────┐
@@ -689,6 +783,7 @@ python test_executor/test_runner.py --no-email           # 不发送邮件报告
               ▼                               ▼
 ┌───────────────────────┐       ┌───────────────────────┐
 │   强制杀掉占用进程    │       │   直接启动应用        │
+│   (避免重复PID处理)   │       │                       │
 └───────────────────────┘       └───────────────────────┘
               │                               │
               └───────────────┬───────────────┘
