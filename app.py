@@ -263,6 +263,14 @@ def add_student():
     age = int(request.form.get("age", 0) or 0)
     class_name = request.form.get("class_name", "").strip()
 
+    if not name:
+        ADD_STUDENT_REQUESTS.labels(status="fail").inc()
+        return render_template("index.html", error="姓名不能为空")
+    
+    if len(name) > 12:
+        ADD_STUDENT_REQUESTS.labels(status="fail").inc()
+        return render_template("index.html", error="姓名长度不能超过12个字符")
+
     try:
         with get_db_connection() as conn:
             conn.execute(

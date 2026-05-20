@@ -409,8 +409,15 @@ def send_email_report(report_path, results=None):
             </table>
             
             <h2>各阶段测试详情</h2>
-            <table style="width: 100%;">
-                <tr><th>阶段名称</th><th>用例数</th><th>成功数</th><th>失败数</th><th>成功率</th><th>颜色</th></tr>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">阶段名称</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f2f2f2;">用例数</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f2f2f2;">成功数</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f2f2f2;">失败数</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f2f2f2;">成功率</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f2f2f2;">颜色</th>
+                </tr>
         """
         
         for i, stage in enumerate(stage_success_percentages):
@@ -420,12 +427,12 @@ def send_email_report(report_path, results=None):
             rate = (passed / total * 100) if total > 0 else 0
             body += f"""
                 <tr>
-                    <td>{stage['name']}</td>
-                    <td style="text-align: center;">{total}</td>
-                    <td style="text-align: center; color: green;">{passed}</td>
-                    <td style="text-align: center; color: red;">{failed}</td>
-                    <td style="text-align: center;">{rate:.1f}%</td>
-                    <td><div style="width: 20px; height: 20px; background-color: {colors[i % len(colors)]}; border-radius: 4px; margin: 0 auto;"></div></td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{stage['name']}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{total}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center; color: green;">{passed}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center; color: red;">{failed}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{rate:.1f}%</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;"><div style="width: 20px; height: 20px; background-color: {colors[i % len(colors)]}; border-radius: 4px; margin: 0 auto;"></div></td>
                 </tr>
                 """
             

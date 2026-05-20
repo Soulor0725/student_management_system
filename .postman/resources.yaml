@@ -1,0 +1,52 @@
+workspace:
+  id: a8255715-d621-4094-8d31-28bdc05d7ba9
+localResources:
+  collections:
+    - ../postman/collections/API Lifecycle
+    - ../postman/collections/企业微信
+    - ../postman/collections/Postman to Markdown
+    - ../postman/collections/Postman Echo
+    - ../postman/collections/对话-MiniMax
+    - ../postman/collections/参数化
+    - ../postman/collections/C1
+    - ../postman/collections/Webhook generator
+    - ../postman/collections/Postman API
+    - ../postman/collections/艺术字
+    - ../postman/collections/微信接口
+    - ../postman/collections/火山引擎
+    - ../postman/collections/API Learner
+    - ../postman/collections/Postman to JMeter
+    - ../postman/collections/PostMan 参数化学习
+    - ../postman/collections/Hello World
+    - ../postman/collections/SOAP- holiday web service
+    - ../postman/collections/模型调优
+    - ../postman/collections/通义万相-通用图像编辑2.1
+    - ../postman/collections/API Usage
+    - ../postman/collections/智普ZAI
+    - ../postman/collections/通义图形生成
+    - ../postman/collections/官方文档
+cloudResources:
+  collections:
+    ../postman/collections/API Lifecycle: 19747590-0e6e92f2-6847-43a5-912e-b81a356e47cf
+    ../postman/collections/企业微信: 19747590-2a21fd43-6288-479f-8767-e22d8376aa5a
+    ../postman/collections/Postman to Markdown: 19747590-2c36287a-aaa1-4478-bbfd-601fe16427f4
+    ../postman/collections/Postman Echo: 19747590-36b32a16-1a09-4cfb-b95f-b3f99cc4affa
+    ../postman/collections/对话-MiniMax: 19747590-3c25970b-6b1b-40ce-b780-691b867b7560
+    ../postman/collections/参数化: 19747590-42285b2c-d5d6-4ec7-ab2a-e1110ad7219e
+    ../postman/collections/C1: 19747590-4d621964-36d8-4fab-b844-a756ea37e95f
+    ../postman/collections/Webhook generator: 19747590-5ddcf5f1-8482-4b8d-b998-0bc683ca9867
+    ../postman/collections/Postman API: 19747590-6559d74c-161e-47ea-ae72-f10a993d0fa7
+    ../postman/collections/艺术字: 19747590-73442a90-9c9c-4b5a-81fb-634f980e3c76
+    ../postman/collections/微信接口: 19747590-84605fd0-e1da-4c46-a3fe-84963417b791
+    ../postman/collections/火山引擎: 19747590-864c69f8-3dc8-4fe9-9eb4-357b2389d588
+    ../postman/collections/API Learner: 19747590-901c0f37-4fc6-44ac-bdd0-dadc84a180f1
+    ../postman/collections/Postman to JMeter: 19747590-962ba5c9-a4af-440b-abcf-1f52d7d7633e
+    ../postman/collections/PostMan 参数化学习: 19747590-aea9ae71-6181-43aa-8e6a-ef633346154a
+    ../postman/collections/Hello World: 19747590-b535dac7-e2b9-46b7-87d7-612bf7425712
+    ../postman/collections/SOAP- holiday web service: 19747590-b963cfee-e355-4735-8387-6f2956b23739
+    ../postman/collections/模型调优: 19747590-d6be4d07-df2b-469d-81d4-924903b1bafe
+    ../postman/collections/通义万相-通用图像编辑2.1: 19747590-e318c712-368a-4621-918d-ed157cd60f02
+    ../postman/collections/API Usage: 19747590-ef6a7b58-5036-49d0-82d3-52cd3c442694
+    ../postman/collections/智普ZAI: 19747590-f0dcc2d2-f912-47c0-bb27-0b49f3629f09
+    ../postman/collections/通义图形生成: 19747590-f23ba8e0-0f49-4f81-a02e-4b8fe2cb825e
+    ../postman/collections/官方文档: 19747590-f8cf2ec5-930e-4053-95aa-ea262d85e337

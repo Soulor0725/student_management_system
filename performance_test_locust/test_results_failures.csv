@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/students,HTTPError('500 Server Error: INTERNAL SERVER ERROR for url: /students'),2,2026-05-19T17:00:38Z,2026-05-19T17:00:38Z
