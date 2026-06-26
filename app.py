@@ -260,16 +260,24 @@ def add_student():
         return redirect(url_for("login_page"))
 
     name = request.form.get("name", "").strip()
-    age = int(request.form.get("age", 0) or 0)
+    try:
+        age = int(request.form.get("age", 0) or 0)
+    except (ValueError, TypeError):
+        age = 0
     class_name = request.form.get("class_name", "").strip()
+
+    with get_db_connection() as conn:
+        students = conn.execute(
+            "SELECT id, name, age, class_name FROM students ORDER BY id DESC"
+        ).fetchall()
 
     if not name:
         ADD_STUDENT_REQUESTS.labels(status="fail").inc()
-        return render_template("index.html", error="姓名不能为空")
-    
+        return render_template("index.html", students=students, edit_student=None, user=session["user"], error="姓名不能为空")
+
     if len(name) > 12:
         ADD_STUDENT_REQUESTS.labels(status="fail").inc()
-        return render_template("index.html", error="姓名长度不能超过12个字符")
+        return render_template("index.html", students=students, edit_student=None, user=session["user"], error="姓名长度不能超过12个字符")
 
     try:
         with get_db_connection() as conn:

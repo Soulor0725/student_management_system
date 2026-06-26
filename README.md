@@ -14,7 +14,7 @@
 
 ## 1. 版本说明
 
-**当前版本**: **v1.10.0**
+**当前版本**: **v1.11.0**
 
 详细版本历史和更新日志请查看：[VERSION.md](./VERSION.md)
 
@@ -22,6 +22,7 @@
 
 | 版本 | 日期 | 主要新增 |
 |------|------|---------|
+| v1.11.0 | 2026-06-27 | 合约/CRUD/数据库/可靠性/冒烟测试+MQ模块 |
 | v1.10.0 | 2026-05-20 | 监控指标优化+统一执行器增强 |
 | v1.9.2 | 2026-05-18 | Locust性能测试模块 |
 | v1.9.1 | 2026-05-11 | 统一测试执行器增强 |
@@ -52,6 +53,12 @@
 | 10 | 集成测试 | ✅ |
 | 11 | 安全测试 | ✅ |
 | 12 | 统一测试执行器 | ✅ |
+| 13 | 合约测试 | ✅ |
+| 14 | CRUD测试 | ✅ |
+| 15 | 数据库测试 | ✅ |
+| 16 | 可靠性测试 | ✅ |
+| 17 | 冒烟测试 | ✅ |
+| 18 | MQ消息发送 | ✅ |
 
 ---
 
@@ -60,8 +67,14 @@
 ```text
 student_management/
 ├─ app.py
+├─ conftest.py
+├─ pytest.ini
 ├─ requirements.txt
+├─ requirements_test.txt
 ├─ README.md
+├─ VERSION.md
+├─ AGENTS.md
+├─ API接口文档.md
 ├─ data/
 │  └─ student_management.db
 ├─ templates/
@@ -83,7 +96,8 @@ student_management/
 │  └─ delete_performanceTesting_data.py
 ├─ performance_test_locust/
 │  ├─ locustfile.py
-│  └─ README.md
+│  ├─ README.md
+│  └─ test_results_*.csv
 ├─ chaos_test/
 │  ├─ chaos_injector.py
 │  ├─ chaos_api.py
@@ -105,6 +119,12 @@ student_management/
 ├─ security_test/
 │  ├─ conftest.py
 │  └─ test_security.py
+├─ contract_test/
+├─ crud_test/
+├─ db_test/
+├─ reliability_test/
+├─ smoke_test/
+├─ mq_sender/
 ├─ test_executor/
 │  ├─ __init__.py
 │  ├─ config.py

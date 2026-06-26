@@ -386,12 +386,19 @@ def test_add_student_case(page) -> bool:
         
         # 退出登录
         try:
-            page.click("a:has-text('退出登录')")
+            page.click("button:has-text('退出登录')")
             page.wait_for_timeout(STEP_WAIT_MS)
             page.wait_for_load_state("domcontentloaded")
             print("[DEBUG] 已退出登录")
         except:
-            print("[DEBUG] 退出登录失败")
+            print("[DEBUG] 退出登录失败，尝试表单提交")
+            try:
+                page.evaluate("document.querySelector('form[action=\"/logout\"]').submit()")
+                page.wait_for_timeout(STEP_WAIT_MS)
+                page.wait_for_load_state("domcontentloaded")
+                print("[DEBUG] 已通过表单提交退出登录")
+            except:
+                print("[DEBUG] 退出登录彻底失败")
         
         print("【用例3】添加学生功能测试 - 通过")
         return True
@@ -504,7 +511,23 @@ def main() -> None:
             ("用例4：登录失败", test_login_fail_case),
         ]:
             start_time = datetime.now()
-            result = test_func(page)
+            try:
+                result = test_func(page)
+            except Exception as e:
+                print(f"{case_name} - 异常: {e}")
+                result = False
+                # 尝试恢复：如果浏览器还活着就新建页面
+                try:
+                    if browser.is_connected():
+                        page = browser.new_page(viewport={"width": 1920, "height": 1080})
+                        page.set_viewport_size({"width": 1920, "height": 1080})
+                        print("[RECOVER] 已创建新页面")
+                    else:
+                        print("[RECOVER] 浏览器已断开，无法恢复")
+                        break
+                except:
+                    print("[RECOVER] 恢复失败")
+                    break
             end_time = datetime.now()
             duration = (end_time - start_time).total_seconds()
             
@@ -529,8 +552,14 @@ def main() -> None:
         print("\n" + "="*60)
         print("自动化执行完成，3秒后关闭浏览器")
         print("="*60)
-        page.wait_for_timeout(3000)
-        browser.close()
+        try:
+            page.wait_for_timeout(3000)
+            browser.close()
+        except:
+            try:
+                browser.close()
+            except:
+                pass
         
         # 计算统计结果并输出（用于统一测试执行器解析）
         total = len(results)

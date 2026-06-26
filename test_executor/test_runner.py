@@ -34,32 +34,35 @@ except ImportError:
         "recipient": "recipient@example.com",
         "subject": "学生管理系统测试报告"
     }
-    print("⚠️ 未找到 email_config.py，使用默认配置。请复制 email_config.py.example 并配置实际邮箱信息。")
+    print("[WARN] 未找到 email_config.py，使用默认配置。请复制 email_config.py.example 并配置实际邮箱信息。")
 
 FLASK_PROCESS = None
 
 def run_command(cmd, cwd=None, live_output=False):
     """执行命令并返回结果"""
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
     try:
         if live_output:
             # 实时输出模式 - 同时保存输出以便解析
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd)
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd, env=env, encoding="utf-8", errors="replace")
             # 实时打印输出
             print(result.stdout)
             if result.stderr:
                 print("错误信息:", result.stderr)
             return {
                 "success": result.returncode == 0,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
+                "stdout": result.stdout or "",
+                "stderr": result.stderr or "",
                 "returncode": result.returncode
             }
         else:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd)
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd, env=env, encoding="utf-8", errors="replace")
             return {
                 "success": result.returncode == 0,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
+                "stdout": result.stdout or "",
+                "stderr": result.stderr or "",
                 "returncode": result.returncode
             }
     except Exception as e:
@@ -194,7 +197,7 @@ def start_flask_app():
     
     # 检查应用是否已启动
     if is_port_in_use(PORT):
-        print(f"  ⚠️ 检测到端口 {PORT} 已被占用，应用可能已启动")
+        print(f"  [WARN] 检测到端口 {PORT} 已被占用，应用可能已启动")
         print("  正在强制关闭现有进程...")
         kill_process_on_port(PORT)
         time.sleep(2)
@@ -228,16 +231,16 @@ def start_flask_app():
         try:
             response = requests.get(f"http://localhost:{PORT}/login", timeout=5)
             if response.status_code == 200:
-                print("  ✅ Flask 应用启动成功！")
+                print("  [OK] Flask 应用启动成功！")
                 return True
         except Exception as e:
             retry_count += 1
-            print(f"  ⚠️ 应用启动检查失败 ({retry_count}/{max_retries}): {e}")
+            print(f"  [WARN] 应用启动检查失败 ({retry_count}/{max_retries}): {e}")
             if retry_count < max_retries:
                 print("  等待2秒后重试...")
                 time.sleep(2)
     
-    print("  ❌ 应用启动失败，请检查应用配置")
+    print("  [FAIL] 应用启动失败，请检查应用配置")
     return False
 
 
@@ -254,11 +257,11 @@ def stop_flask_app():
                 FLASK_PROCESS.terminate()
             else:
                 os.killpg(os.getpgid(FLASK_PROCESS.pid), 9)
-            print("✅ Flask 应用已停止")
+            print("[OK] Flask 应用已停止")
         except Exception as e:
-            print(f"⚠️ 停止应用时出错: {e}")
+            print(f"[WARN] 停止应用时出错: {e}")
     else:
-        print("⚠️ 没有找到运行的Flask进程")
+        print("[WARN] 没有找到运行的Flask进程")
 
 
 def send_email_report(report_path, results=None):
@@ -549,7 +552,7 @@ def send_email_report(report_path, results=None):
             try:
                 print(f"  正在连接SMTP服务器: {EMAIL_CONFIG['smtp_server']}:{EMAIL_CONFIG['smtp_port']}")
                 server = smtplib.SMTP_SSL(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
-                server.set_debuglevel(1)  # 启用调试模式
+                server.set_debuglevel(0)  # 启用调试模式
                 
                 print(f"  正在登录: {EMAIL_CONFIG['sender']}")
                 server.login(EMAIL_CONFIG["sender"], EMAIL_CONFIG["password"])
@@ -558,30 +561,30 @@ def send_email_report(report_path, results=None):
                 server.sendmail(EMAIL_CONFIG["sender"], EMAIL_CONFIG["recipient"], msg.as_string())
                 server.quit()
                 
-                print(f"✅ 邮件已成功发送至: {EMAIL_CONFIG['recipient']}")
+                print(f"[OK] 邮件已成功发送至: {EMAIL_CONFIG['recipient']}")
                 return True
             except smtplib.SMTPAuthenticationError as e:
-                print(f"❌ SMTP认证失败: {e}")
+                print(f"[FAIL] SMTP认证失败: {e}")
                 print(f"  请检查邮箱授权码是否正确")
                 return False
             except smtplib.SMTPException as e:
                 retry_count += 1
-                print(f"⚠️ SMTP错误 (尝试 {retry_count}/{max_retries}): {e}")
+                print(f"[WARN] SMTP错误 (尝试 {retry_count}/{max_retries}): {e}")
                 if retry_count < max_retries:
                     print("  等待2秒后重试...")
                     time.sleep(2)
                 else:
-                    print(f"❌ 邮件发送失败，已达到最大重试次数")
+                    print(f"[FAIL] 邮件发送失败，已达到最大重试次数")
                     return False
             except Exception as e:
-                print(f"❌ 邮件发送失败: {e}")
+                print(f"[FAIL] 邮件发送失败: {e}")
                 print(f"  错误类型: {type(e).__name__}")
                 import traceback
                 traceback.print_exc()
                 return False
         
     except Exception as e:
-        print(f"❌ 邮件发送失败: {e}")
+        print(f"[FAIL] 邮件发送失败: {e}")
         print(f"  错误类型: {type(e).__name__}")
         import traceback
         traceback.print_exc()
@@ -625,7 +628,7 @@ def generate_summary_report(results):
         f.write(f"| 序号 | 阶段名称 | 状态 | 耗时 | 通过 | 失败 |\n")
         f.write(f"|------|---------|------|------|------|------|\n")
         for i, stage in enumerate(results, 1):
-            status = "✅ 通过" if stage["success"] else "❌ 失败"
+            status = "PASS" if stage["success"] else "FAIL"
             f.write(f"| {i} | {stage['name']} | {status} | {stage.get('duration', 'N/A')} | {stage.get('passed', 0)} | {stage.get('failed', 0)} |\n")
     
         # 添加性能测试专用指标
@@ -639,7 +642,7 @@ def generate_summary_report(results):
             f.write(f"| 总请求数 | {perf_result.get('passed', 0) + perf_result.get('failed', 0)} |\n")
             f.write(f"| 失败请求数 | {perf_result.get('failed', 0)} |\n")
     
-    print(f"\n📊 汇总报告已生成: {md_report_path}")
+    print(f"\n汇总报告已生成: {md_report_path}")
     return md_report_path
 
 def main():
@@ -658,14 +661,24 @@ def main():
         stages_to_run = EXECUTION_ORDER
     
     print("="*60)
-    print("    统一测试执行器 v1.0")
+    print("    统一测试执行器 v2.0")
     print("="*60)
-    print(f"执行阶段: {', '.join([TEST_STAGES[s]['name'] for s in stages_to_run])}")
+    print(f"执行阶段 ({len(stages_to_run)}): {', '.join([TEST_STAGES[s]['name'] for s in stages_to_run])}")
     print("="*60)
     
     # 启动Flask应用
-    if not args.no_start_server:
+    need_server = any(s in ["automation", "performance", "chaos"] for s in stages_to_run)
+    server_started_by_us = False
+    
+    if need_server and not is_port_in_use(5000):
+        print("\n[INFO] 自动化/性能/混沌测试需要运行中的服务器，正在启动...")
         start_flask_app()
+        server_started_by_us = True
+    elif not args.no_start_server:
+        start_flask_app()
+        server_started_by_us = True
+    else:
+        print("\n[INFO] 跳过服务器启动 (--no-start-server)")
     
     results = []
     
@@ -713,7 +726,7 @@ def main():
             # 检查 Locust 是否可用
             check_result = run_command("locust --version", cwd=cwd)
             if not check_result["success"]:
-                print("  ⚠️ Locust 未安装，跳过性能测试")
+                print("  [WARN] Locust 未安装，跳过性能测试")
                 end_time = datetime.now()
                 results.append({
                     "name": TEST_STAGES[stage]["name"],
@@ -867,7 +880,7 @@ def main():
     total_failed = 0
     
     for stage in results:
-        status = "✅ 通过" if stage["success"] else "❌ 失败"
+        status = "PASS" if stage["success"] else "FAIL"
         passed = stage.get("passed", "-")
         failed = stage.get("failed", "-")
         
@@ -888,8 +901,10 @@ def main():
     report_path = os.path.join(reports_dir, f"test_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
     
     # 停止Flask应用
-    if not args.no_stop_server:
+    if server_started_by_us and not args.no_stop_server:
         stop_flask_app()
+    else:
+        print("\n[INFO] 跳过服务器停止")
     
     # 发送邮件报告
     if not args.no_email:

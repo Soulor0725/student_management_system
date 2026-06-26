@@ -1,51 +1,15 @@
+"""单元测试 — 密码哈希、注册、登录、学生 CRUD"""
+
 import pytest
-import sqlite3
-import tempfile
-import os
-from pathlib import Path
-from unittest.mock import patch
-
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import os
 
-import app as app_module
-from app import app, init_db, hash_password, is_logged_in
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
-@pytest.fixture
-def client():
-    import shutil
-    import time
-    
-    tmp_dir = tempfile.mkdtemp()
-    test_db = Path(tmp_dir) / "test.db"
-
-    original_db_file = app_module.DB_FILE
-    app_module.DB_FILE = test_db
-
-    try:
-        with app.test_client() as client:
-            with app.app_context():
-                init_db()
-            yield client
-    finally:
-        app_module.DB_FILE = original_db_file
-        # 等待片刻确保连接关闭
-        time.sleep(0.1)
-        # 尝试删除临时目录，忽略错误
-        try:
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-        except Exception:
-            pass
+from app import hash_password
 
 
-@pytest.fixture
-def logged_in_client(client):
-    with client.session_transaction() as sess:
-        sess["user"] = {"id": 1, "username": "testuser"}
-    return client
-
-
+@pytest.mark.unit
 class TestHashPassword:
     def test_hash_password_returns_hex_string(self):
         result = hash_password("test123")
@@ -64,6 +28,7 @@ class TestHashPassword:
         assert h1 != h2
 
 
+@pytest.mark.unit
 class TestRegister:
     def test_register_page_loads(self, client):
         response = client.get("/register")
@@ -83,6 +48,7 @@ class TestRegister:
         assert "用户名已存在" in response.text
 
 
+@pytest.mark.unit
 class TestLogin:
     def test_login_page_loads(self, client):
         response = client.get("/login")
@@ -100,6 +66,7 @@ class TestLogin:
         assert "登录成功" in response.text
 
 
+@pytest.mark.unit
 class TestStudentCrud:
     def test_index_redirects_unlogged(self, client):
         response = client.get("/")
