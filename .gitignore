@@ -40,6 +40,7 @@ integration_test/reports/
 security_test/reports/
 unit_test/reports/
 performance_test_jmeter/reports/
+performance_test_locust/test_results*.csv
 
 # Allure Reports
 allure-results/
