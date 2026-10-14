@@ -5,12 +5,15 @@
 
 import os
 import random
+import re
 from locust import HttpUser, task, between, events
 from locust.stats import stats_printer, stats_history
 from locust.log import setup_logging
 
 # 配置日志
 setup_logging("INFO", None)
+
+_CSRF_RE = re.compile(r'name="csrf_token"\s+value="([^"]+)"')
 
 
 class StudentManagementUser(HttpUser):
@@ -19,12 +22,23 @@ class StudentManagementUser(HttpUser):
     wait_time = between(1, 3)
     host = "http://localhost:5000"
     
+    def _refresh_csrf(self):
+        """从页面提取 CSRF token（登录会轮换会话 token）。"""
+        try:
+            resp = self.client.get("/login")
+            match = _CSRF_RE.search(resp.text or "")
+            if match:
+                self.client.headers["X-CSRF-TOKEN"] = match.group(1)
+        except Exception:
+            pass
+
     def on_start(self):
         """用户开始时执行 - 注册并登录"""
         self.username = f"test_user_{random.randint(1000, 9999)}"
         self.password = "test123"
         
         try:
+            self._refresh_csrf()
             self.client.post("/register", {
                 "username": self.username,
                 "password": self.password
@@ -32,10 +46,13 @@ class StudentManagementUser(HttpUser):
         except Exception:
             pass
         
+        self._refresh_csrf()
         response = self.client.post("/login", {
             "username": self.username,
             "password": self.password
         })
+        # 登录清空了会话，重新取 token 供后续 POST 使用
+        self._refresh_csrf()
         
         if response.status_code == 200:
             self.logged_in = True
@@ -45,6 +62,7 @@ class StudentManagementUser(HttpUser):
     def on_stop(self):
         """用户结束时执行"""
         if self.logged_in:
+            self._refresh_csrf()
             self.client.post("/logout")
     
     @task(3)

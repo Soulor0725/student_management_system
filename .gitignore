@@ -31,6 +31,7 @@ email_config.py
 # Test Reports - 忽略各模块测试报告
 api_test/reports/
 automation_test/output/
+/output/
 test_executor/reports/
 test_executor/test_executor/reports/
 chaos_test/reports/

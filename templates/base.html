@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}学生管理系统{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <div class="app-shell">
+      {% block sidebar %}
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">SM</span>
+          <span class="brand-text">学生管理系统</span>
+        </div>
+        <nav class="nav">
+          <a class="nav-item{% if request.endpoint == 'index' %} active{% endif %}" href="{{ url_for('index') }}">学生管理</a>
+          <a class="nav-item{% if request.endpoint in ('login_page', 'register_page') %} active{% endif %}" href="{{ url_for('login_page') }}">账号中心</a>
+          <a class="nav-item" href="{{ url_for('metrics') }}">监控指标</a>
+        </nav>
+        <div class="sidebar-foot">Student Management</div>
+      </aside>
+      {% endblock %}
+
+      <div class="main">
+        {% block topbar %}
+        <header class="topbar">
+          <div class="topbar-title">{% block page_title %}学生管理{% endblock %}</div>
+          <div class="user-area">
+            <span class="user-chip">当前用户：{{ user.username if user else '未登录' }}</span>
+            {% if user %}
+            <form method="post" action="{{ url_for('logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="btn btn-ghost">退出登录</button>
+            </form>
+            {% endif %}
+          </div>
+        </header>
+        {% endblock %}
+
+        <main class="content">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

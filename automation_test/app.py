@@ -1,5 +1,6 @@
 from pathlib import Path
 import hashlib
+import hmac
 import sqlite3
 import time
 import re
@@ -12,6 +13,7 @@ from datetime import datetime, timedelta
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
+from werkzeug.security import check_password_hash
 
 
 BASE_URL = "http://127.0.0.1:5000"
@@ -191,8 +193,18 @@ def generate_terminal_report(results: list) -> None:
     print("=" * 70 + "\n")
 
 
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+def verify_password(stored: str, password: str) -> bool:
+    """校验数据库中的密码，兼容旧的 SHA-256 记录和新的加盐哈希。"""
+    if not stored or not password:
+        return False
+    if len(stored) == 64 and all(c in "0123456789abcdef" for c in stored.lower()):
+        return hmac.compare_digest(
+            hashlib.sha256(password.encode("utf-8")).hexdigest(), stored
+        )
+    try:
+        return check_password_hash(stored, password)
+    except ValueError:
+        return False
 
 
 def cleanup_existing_user(username: str) -> None:
@@ -209,10 +221,9 @@ def cleanup_existing_user(username: str) -> None:
 def assert_user_exists_in_db(username: str, password: str) -> None:
     with sqlite3.connect(DB_FILE) as conn:
         row = conn.execute(
-            "SELECT id FROM users WHERE username = ? AND password = ?",
-            (username, hash_password(password)),
+            "SELECT password FROM users WHERE username = ?", (username,)
         ).fetchone()
-    if not row:
+    if not row or not verify_password(row[0], password):
         raise AssertionError(f"注册断言失败：数据库未找到账号 {username}")
     print(f"[ASSERT PASS] 注册成功，数据库已存在账号: {username}")
 

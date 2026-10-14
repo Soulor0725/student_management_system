@@ -3,6 +3,8 @@
 包含学生管理系统的完整 API 测试，覆盖正常和异常场景。
 """
 
+import re
+
 import pytest
 import requests
 import json
@@ -22,6 +24,22 @@ TEST_STUDENT = {
 }
 
 session = requests.Session()
+
+_CSRF_RE = re.compile(r'name="csrf_token"\s+value="([^"]+)"')
+
+
+def refresh_csrf() -> None:
+    """刷新会话的 CSRF token（登录会清空会话并轮换 token）。"""
+    resp = session.get(f"{BASE_URL}/login")
+    match = _CSRF_RE.search(resp.text)
+    if match:
+        session.headers["X-CSRF-TOKEN"] = match.group(1)
+
+
+def api_post(url, data=None, **kwargs):
+    """POST 前自动带上最新 CSRF token，等价于浏览器表单行为。"""
+    refresh_csrf()
+    return session.post(url, data=data, **kwargs)
 
 ENDPOINT_STATS = {}
 TEST_RESULTS = []
@@ -49,7 +67,7 @@ class TestAuthAPI:
         """正常场景：用户注册成功"""
         print(f"[API测试] 正在执行: POST /register - 用户注册成功")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/register", data={
+        response = api_post(f"{BASE_URL}/register", data={
             "username": TEST_USER["username"],
             "password": TEST_USER["password"]
         })
@@ -73,7 +91,7 @@ class TestAuthAPI:
         """异常场景：用户名为空"""
         print(f"[API测试] 正在执行: POST /register - 用户名为空")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/register", data={
+        response = api_post(f"{BASE_URL}/register", data={
             "username": "",
             "password": "password123"
         })
@@ -97,7 +115,7 @@ class TestAuthAPI:
         """异常场景：密码为空"""
         print(f"[API测试] 正在执行: POST /register - 密码为空")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/register", data={
+        response = api_post(f"{BASE_URL}/register", data={
             "username": "testuser",
             "password": ""
         })
@@ -121,7 +139,7 @@ class TestAuthAPI:
         """异常场景：重复注册"""
         print(f"[API测试] 正在执行: POST /register - 重复注册")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/register", data={
+        response = api_post(f"{BASE_URL}/register", data={
             "username": TEST_USER["username"],
             "password": TEST_USER["password"]
         })
@@ -145,7 +163,7 @@ class TestAuthAPI:
         """正常场景：用户登录成功"""
         print(f"[API测试] 正在执行: POST /login - 用户登录成功")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/login", data={
+        response = api_post(f"{BASE_URL}/login", data={
             "username": TEST_USER["username"],
             "password": TEST_USER["password"]
         })
@@ -169,7 +187,7 @@ class TestAuthAPI:
         """异常场景：密码错误"""
         print(f"[API测试] 正在执行: POST /login - 密码错误")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/login", data={
+        response = api_post(f"{BASE_URL}/login", data={
             "username": TEST_USER["username"],
             "password": "wrong_password"
         })
@@ -192,7 +210,7 @@ class TestAuthAPI:
         """异常场景：用户不存在"""
         print(f"[API测试] 正在执行: POST /login - 用户不存在")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/login", data={
+        response = api_post(f"{BASE_URL}/login", data={
             "username": "nonexistent",
             "password": "password123"
         })
@@ -215,7 +233,7 @@ class TestAuthAPI:
         """异常场景：空凭证"""
         print(f"[API测试] 正在执行: POST /login - 空凭证")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/login", data={
+        response = api_post(f"{BASE_URL}/login", data={
             "username": "",
             "password": ""
         })
@@ -240,7 +258,7 @@ class TestStudentAPI:
 
     def setup_method(self):
         """每个测试前先登录"""
-        session.post(f"{BASE_URL}/login", data={
+        api_post(f"{BASE_URL}/login", data={
             "username": TEST_USER["username"],
             "password": TEST_USER["password"]
         })
@@ -250,7 +268,7 @@ class TestStudentAPI:
         """正常场景：添加学生成功"""
         print(f"[API测试] 正在执行: POST /students - 添加学生成功")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/students", data={
+        response = api_post(f"{BASE_URL}/students", data={
             "name": TEST_STUDENT["name"],
             "age": TEST_STUDENT["age"],
             "class_name": TEST_STUDENT["class_name"]
@@ -274,7 +292,7 @@ class TestStudentAPI:
         """异常场景：学生姓名为空"""
         print(f"[API测试] 正在执行: POST /students - 学生姓名为空")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/students", data={
+        response = api_post(f"{BASE_URL}/students", data={
             "name": "",
             "age": 18,
             "class_name": "Class A"
@@ -298,7 +316,7 @@ class TestStudentAPI:
         """异常场景：年龄无效（负数）"""
         print(f"[API测试] 正在执行: POST /students - 年龄为负数")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/students", data={
+        response = api_post(f"{BASE_URL}/students", data={
             "name": "Test",
             "age": -1,
             "class_name": "Class A"
@@ -322,7 +340,7 @@ class TestStudentAPI:
         """异常场景：年龄为0"""
         print(f"[API测试] 正在执行: POST /students - 年龄为零")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/students", data={
+        response = api_post(f"{BASE_URL}/students", data={
             "name": "Test",
             "age": 0,
             "class_name": "Class A"
@@ -346,7 +364,7 @@ class TestStudentAPI:
         """异常场景：班级为空"""
         print(f"[API测试] 正在执行: POST /students - 班级为空")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/students", data={
+        response = api_post(f"{BASE_URL}/students", data={
             "name": "Test",
             "age": 18,
             "class_name": ""
@@ -394,7 +412,7 @@ class TestStudentAPI:
         response = session.get(f"{BASE_URL}/")
         ENDPOINT_STATS["GET /"] = ENDPOINT_STATS.get("GET /", 0) + 1
         assert response.status_code == 200
-        response = session.post(f"{BASE_URL}/students/1", data={
+        response = api_post(f"{BASE_URL}/students/1", data={
             "name": "Updated Name",
             "age": 20,
             "class_name": "Class B"
@@ -418,7 +436,7 @@ class TestStudentAPI:
         """正常场景：删除学生成功"""
         print(f"[API测试] 正在执行: POST /students/<id>/delete - 删除学生成功")
         start_time = datetime.now()
-        response = session.post(f"{BASE_URL}/students/1/delete")
+        response = api_post(f"{BASE_URL}/students/1/delete")
         ENDPOINT_STATS["POST /students/<id>/delete"] = ENDPOINT_STATS.get("POST /students/<id>/delete", 0) + 1
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()

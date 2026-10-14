@@ -21,6 +21,14 @@ def flask_app():
     return app
 
 
+@pytest.fixture(autouse=True)
+def reset_login_rate_limit():
+    """登录限流是进程级内存态，测试之间必须隔离，否则会互相触发锁定。"""
+    app_module._reset_login_attempts()
+    yield
+    app_module._reset_login_attempts()
+
+
 @pytest.fixture(scope="function")
 def client(flask_app):
     """每个测试函数独立的临时数据库 + 测试客户端"""

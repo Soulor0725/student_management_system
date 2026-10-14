@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ code }} {{ title }} - 学生管理系统{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section class="card error-card">
+  <div class="error-code">{{ code }}</div>
+  <h2>{{ title }}</h2>
+  <p class="error-text">{{ message }}</p>
+  <div class="actions-row">
+    {% if user %}
+    <a class="btn" href="{{ url_for('index') }}">返回学生管理</a>
+    {% else %}
+    <a class="btn" href="{{ url_for('login_page') }}">返回登录</a>
+    {% endif %}
+    <a class="btn btn-ghost" href="javascript:history.back()">返回上一页</a>
+  </div>
+</section>
+{% endblock %}

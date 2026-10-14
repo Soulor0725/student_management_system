@@ -1,71 +1,70 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ "登录" if mode == "login" else "注册" }} - 学生管理系统</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
-  <body>
-    <div class="auth-container">
-      <section class="card auth-card">
-        <h1>学生管理系统</h1>
-        <h2>{{ "账号登录" if mode == "login" else "账号注册" }}</h2>
+{% extends "base.html" %}
 
-        {% if error %}
-        <p class="error-text">{{ error }}</p>
-        {% endif %}
-        {% if toast %}
-        <p class="toast toast-success">{{ toast }}</p>
-        {% endif %}
+{% block title %}{{ "登录" if mode == "login" else "注册" }} - 学生管理系统{% endblock %}
+{% block page_title %}{{ "账号登录" if mode == "login" else "账号注册" }}{% endblock %}
 
-        <form method="post" action="{{ url_for('login_submit') if mode == 'login' else url_for('register_submit') }}" onsubmit="return validateForm()">
-          <div class="form-row">
-            <label for="username">用户名</label>
-            <input id="username" name="username" />
-          </div>
+{% block sidebar %}
+<aside class="sidebar">
+  <div class="brand">
+    <span class="brand-mark">SM</span>
+    <span class="brand-text">学生管理系统</span>
+  </div>
+  <nav class="nav">
+    <a class="nav-item active" href="{{ url_for('login_page') }}">账号中心</a>
+  </nav>
+  <div class="sidebar-foot">Student Management</div>
+</aside>
+{% endblock %}
 
-          <div class="form-row">
-            <label for="password">密码</label>
-            <input id="password" name="password" type="password" />
-          </div>
+{% block content %}
+<section class="card auth-card">
+  <h2>{{ "账号登录" if mode == "login" else "账号注册" }}</h2>
+  <p class="card-sub">学生管理系统 · 请使用已授权账号访问</p>
 
-          <button type="submit">{{ "登录" if mode == "login" else "注册" }}</button>
-        </form>
+  {% if error %}
+  <p class="error-text" role="alert">{{ error }}</p>
+  {% endif %}
+  {% if toast %}
+  <p class="toast toast-success" role="status">{{ toast }}</p>
+  {% endif %}
 
-        {% if mode == "login" %}
-        <p class="switch-link">还没有账号？<a href="{{ url_for('register_page') }}">去注册</a></p>
-        {% else %}
-        <p class="switch-link">已有账号？<a href="{{ url_for('login_page') }}">去登录</a></p>
-        {% endif %}
-      </section>
+  <form
+    method="post"
+    action="{{ url_for('login_submit') if mode == 'login' else url_for('register_submit') }}"
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <div class="form-row">
+      <label for="username">用户名</label>
+      <input id="username" name="username" required maxlength="64"
+             autocomplete="{{ 'username' if mode == 'login' else 'new-username' }}" />
+      <span class="field-hint">1 ~ 64 个字符</span>
     </div>
 
-    {% if redirect_to %}
-    <script>
-      setTimeout(function () {
-        window.location.href = "{{ redirect_to }}";
-      }, 1200);
-    </script>
-    {% endif %}
+    <div class="form-row">
+      <label for="password">密码</label>
+      <input id="password" name="password" type="password" required minlength="5" maxlength="128"
+             autocomplete="{{ 'current-password' if mode == 'login' else 'new-password' }}" />
+      <span class="field-hint">至少 5 位</span>
+    </div>
 
-    <script>
-      function validateForm() {
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
-        
-        if (!username) {
-          alert('请填写用户名');
-          return false;
-        }
-        
-        if (!password) {
-          alert('请填写密码');
-          return false;
-        }
-        
-        return true;
-      }
-    </script>
-  </body>
-</html>
+    <button type="submit" class="btn btn-block">{{ "登录" if mode == "login" else "注册" }}</button>
+  </form>
+
+  <p class="switch-link">
+    {% if mode == "login" %}
+    还没有账号？<a href="{{ url_for('register_page') }}">去注册</a>
+    {% else %}
+    已有账号？<a href="{{ url_for('login_page') }}">去登录</a>
+    {% endif %}
+  </p>
+</section>
+
+{% if redirect_to %}
+<script>
+  setTimeout(function () {
+    window.location.href = "{{ redirect_to }}";
+  }, 800);
+</script>
+{% endif %}
+{% endblock %}

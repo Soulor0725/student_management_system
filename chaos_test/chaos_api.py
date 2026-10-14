@@ -1,8 +1,45 @@
+"""混沌测试控制接口（/chaos/*）。
+
+安全约束：这些端点能把整个应用切换到随机故障模式，因此只接受
+本机（loopback）来源，或携带 `X-Chaos-Token: <CHAOS_API_TOKEN>`
+的远程调用（run_chaos_test.py 等测试执行器可用环境变量下发 token）。
+"""
+
+import hmac
+import os
+from ipaddress import ip_address
+
 from flask import Blueprint, jsonify, request
 from .chaos_injector import ChaosController
 
 chaos_bp = Blueprint('chaos', __name__)
 chaos_controller = ChaosController()
+
+
+def _is_loopback() -> bool:
+    try:
+        return ip_address(request.remote_addr or '').is_loopback
+    except ValueError:
+        return False
+
+
+def _token_ok() -> bool:
+    token = os.environ.get('CHAOS_API_TOKEN')
+    if not token:
+        return False
+    return hmac.compare_digest(str(request.headers.get('X-Chaos-Token', '')), token)
+
+
+@chaos_bp.before_request
+def restrict_chaos_access():
+    """混沌控制接口仅允许本机调用；远程需携带 X-Chaos-Token。"""
+    if _is_loopback() or _token_ok():
+        return None
+    return jsonify({
+        'status': 'error',
+        'message': 'chaos endpoints are local-only (loopback or X-Chaos-Token required)'
+    }), 403
+
 
 @chaos_bp.route('/chaos/status', methods=['GET'])
 def get_chaos_status():
